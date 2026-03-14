@@ -2,12 +2,12 @@ import { useState } from "react";
 
 const TEXT_TYPES = [
   { id: "post",     label: "📱 Пост / Мотивация",    desc: "Instagram, Telegram, VK",       styles: ["Живой / Кухонный", "Через личную историю", "Через боль и инсайт"] },
-  { id: "sales",    label: "💰 Оффер / УТП",          desc: "Продающий текст, лендинг",      styles: ["Прямой и честный", "Через страх и решение", "Через результат клиента"], structure: true },
+  { id: "sales",    label: "💰 Оффер / УТП",          desc: "Продающий текст, лендинг",      styles: ["Прямой и честный", "Через страх и решение", "Через результат клиента"] },
   { id: "reels",    label: "🎬 Reels / Видео",        desc: "Сценарий с хуком и CTA",        styles: ["Провокационный хук", "Сторителлинг", "Список / Инструкция"] },
   { id: "promo",    label: "🔥 Прогрев / Сторис",     desc: "Серия дней, воронка",           styles: ["Уязвимость + Экспертность", "День за днём к офферу", "Через ценности и смыслы"] },
-  { id: "unpack",   label: "🧠 Распаковка эксперта",  desc: "УТП, позиция, смыслы",          styles: ["Через странность и силу", "Через путь и трансформацию", "Через антипозицию"] },
+  { id: "plan",     label: "📅 Контент-план",         desc: "План публикаций на месяц",      styles: ["По болям аудитории", "По воронке продаж", "Микс форматов"] },
   { id: "niche",    label: "🔍 Анализ ниши",          desc: "Темы, боли, контент-план",      styles: ["Стратегический разбор", "Через боли аудитории", "Вирусные форматы"] },
-  { id: "bio",      label: "✨ Шапка профиля",         desc: "Bio для Instagram / Telegram",  styles: ["Чёткая и конкретная", "С характером и голосом", "Через результат клиента"], structure: true },
+  { id: "bio",      label: "✨ Шапка профиля",         desc: "Bio для Instagram / Telegram",  styles: ["Чёткая и конкретная", "С характером и голосом", "Через результат клиента"] },
   { id: "strategy", label: "📈 Стратегия блога",      desc: "С чего начать и как расти",     styles: ["Пошаговый план", "Через точку А в точку Б", "Быстрый старт с результатом"] },
 ];
 
@@ -25,51 +25,125 @@ const MOTIVATIONS = [
 ];
 
 function buildSystemPrompt(typeId, style) {
-  const structureBlock = (typeId === "sales" || typeId === "bio")
-    ? (typeId === "bio"
-        ? "\nДля шапки профиля Instagram:\n- Строго до 150 символов включая эмодзи\n- Никаких заголовков типа КОМУ, РЕЗУЛЬТАТ, МЕТОД — просто живой текст\n- Дай 3 варианта шапки профиля, каждый с новой строки, пронумерованных\n- В каждом варианте должен быть призыв к действию (CTA): ссылка, команда, предложение написать\n- Никаких звёздочек и markdown-разметки в тексте\n"
-        : "\nОБЯЗАТЕЛЬНАЯ СТРУКТУРА:\n1. КОМУ\n2. РЕЗУЛЬТАТ\n3. МЕТОД\n4. БОЛЬ\n5. СРОКИ\nПиши живо, не как анкету. Никаких звёздочек и markdown-разметки.\n")
-    : "";
-
-  const nicheBlock = typeId === "niche"
-    ? "\nСТРУКТУРА ОТВЕТА:\n## 🎯 Портрет аудитории\n## 🔥 Топ-10 вирусных тем\n## 😣 Боли и страхи\n## 📅 Контент-план на 2 недели\n## 💡 Идеи для вирусных Reels (5 сценариев)\n## 🚀 Позиционирование эксперта\nКонкретно, без воды.\n"
-    : "";
-
-  const strategyBlock = typeId === "strategy"
-    ? "\nСТРУКТУРА СТРАТЕГИИ БЛОГА:\n## 🔍 Диагностика точки А\n## 🎯 Цель и точка Б\n## 🧱 Фундамент блога\n## 📅 Контент-система на 30 дней\n## 🚀 Первые шаги с гарантированным результатом\n## ⚠️ Главные ошибки которые тормозят рост\n## 📊 Как измерять результат через 30/60/90 дней\nПиши как наставник, который прошёл этот путь. Конкретно, с цифрами, без воды.\n"
-    : "";
-
-  return "Ты — AI Pulse PRO. Маркетолог с глубоким пониманием русского менталитета и психологии аудитории.\n\n" +
+  const base = "Ты — AI Pulse PRO. Ты маркетолог с опытом 20+ лет, глубоким пониманием русского менталитета, психологии и мотивации русскоязычной аудитории.\n\n" +
     "Ты знаешь:\n" +
     "- Русский человек не верит громким обещаниям — нужна честность и конкретика\n" +
     "- Доверие строится через уязвимость, а не через регалии\n" +
     "- Живой текст продаёт лучше правильного\n" +
-    "- Боль надо называть своими именами\n" +
-    "- Цифры и сроки снижают тревогу\n\n" +
+    "- Боль надо называть своими именами, без обёртки\n" +
+    "- Цифры и сроки снижают тревогу и повышают доверие\n\n" +
     "СТИЛЬ: " + style + "\n\n" +
-    "ПРАВИЛА:\n" +
-    "- Пиши как человек, который понимает проблему изнутри\n" +
-    "- Никаких клише: уникальный, комплексный подход — в мусор\n" +
-    "- Короткие и длинные фразы вперемешку. Паузы. Многоточия\n" +
-    "- Один финальный текст, готовый к публикации\n" +
+    "ОБЩИЕ ПРАВИЛА:\n" +
     "- Никаких звёздочек ** и markdown-разметки в тексте\n" +
-    structureBlock + nicheBlock + strategyBlock +
-    "\nЗАВЕРШЕНИЕ: Задай один вопрос — откликается ли результат, нужна ли доработка.\n" +
+    "- Никаких клише: уникальный, комплексный подход, в современном мире — в мусор\n" +
+    "- Короткие и длинные фразы вперемешку. Паузы. Многоточия где надо подышать\n" +
+    "- Пиши как человек, который понимает проблему изнутри\n" +
+    "- Один финальный текст, готовый к публикации. Не варианты, не объяснения\n";
+
+  const prompts = {
+    post:
+      "\nТЫ ПИШЕШЬ: пост для соцсетей\n" +
+      "СТРУКТУРА:\n" +
+      "1. ХУК — первые 1-2 строки которые останавливают скролл. Вопрос, провокация, неожиданный факт или боль\n" +
+      "2. ИСТОРИЯ / БОЛЬ — личная ситуация или узнаваемая проблема читателя. Говори от первого лица или обращайся напрямую\n" +
+      "3. ИНСАЙТ — поворот, озарение, неожиданный вывод. То, что человек не ожидал услышать\n" +
+      "4. ПОЛЬЗА — конкретный совет, шаг, мысль которую можно применить прямо сейчас\n" +
+      "5. МЯГКИЙ CTA — вопрос к аудитории или призыв без давления\n" +
+      "ВАЖНО: текст должен вызывать эмоцию — узнавание, облегчение, вдохновение или лёгкий дискомфорт\n",
+
+    sales:
+      "\nТЫ ПИШЕШЬ: продающий текст / оффер\n" +
+      "СТРУКТУРА:\n" +
+      "1. КОМУ — точный портрет: кто этот человек, в какой ситуации он сейчас\n" +
+      "2. БОЛЬ — острая проблема которую он носит в себе. Назови её своими словами, без смягчений\n" +
+      "3. РЕЗУЛЬТАТ — что конкретно получит. В измеримых или ощутимых словах\n" +
+      "4. МЕТОД — как это работает, в чём уникальность подхода\n" +
+      "5. СРОКИ — когда будет результат\n" +
+      "6. CTA — конкретный следующий шаг без давления\n" +
+      "ВАЖНО: никаких громких обещаний. Только то, во что сам веришь\n",
+
+    reels:
+      "\nТЫ ПИШЕШЬ: сценарий для Reels / короткого видео\n" +
+      "СТРУКТУРА:\n" +
+      "0-3 сек ХУК: визуальный или текстовый крючок — провокация, боль, обещание\n" +
+      "3-10 сек ПРОБЛЕМА: раскрываешь боль или ситуацию\n" +
+      "10-25 сек РЕШЕНИЕ: 3 конкретных шага или одна сильная идея\n" +
+      "25-30 сек CTA: что сделать прямо сейчас\n" +
+      "ФОРМАТ ВЫДАЧИ: пиши как режиссёрский сценарий — что говорить, что показывать, текст на экране\n" +
+      "ВАЖНО: хук должен останавливать палец. Первые 3 секунды решают всё\n",
+
+    promo:
+      "\nТЫ ПИШЕШЬ: серию для прогрева / сторис\n" +
+      "СТРУКТУРА НА 6 ДНЕЙ:\n" +
+      "День 1: Контекст — кто ты, почему тебе можно доверять. Без регалий, через историю\n" +
+      "День 2: Боль — показываешь что понимаешь проблему изнутри\n" +
+      "День 3: Уязвимость — личная история провала или сомнения. Строит доверие\n" +
+      "День 4: Ценности — во что веришь, как смотришь на мир\n" +
+      "День 5: Решение — показываешь продукт через результат клиента или свой кейс\n" +
+      "День 6: Оффер — мягкое закрытие с ограничением\n" +
+      "ВАЖНО: каждый день заканчивается вопросом или интригой на следующий день\n",
+
+    plan:
+      "\nТЫ СОСТАВЛЯЕШЬ: контент-план на месяц\n" +
+      "СТРУКТУРА:\n" +
+      "- 30 постов с темами, форматом и кратким описанием о чём\n" +
+      "- Соотношение: 40% польза, 30% личное/доверие, 20% продажи, 10% вовлечение\n" +
+      "- Форматы: пост, Reels, сторис, карусель — чередуй\n" +
+      "- Темы должны вести по воронке: знакомство → доверие → желание → покупка\n" +
+      "ФОРМАТ ВЫДАЧИ: таблица или нумерованный список. День / Формат / Тема / Суть\n" +
+      "ВАЖНО: темы должны цеплять аудиторию, быть актуальными и вести к продаже\n",
+
+    niche:
+      "\nТЫ ПРОВОДИШЬ: полный анализ ниши\n" +
+      "СТРУКТУРА:\n" +
+      "🎯 Портрет аудитории — кто эти люди, что их тревожит, о чём мечтают\n" +
+      "🔥 Топ-10 вирусных тем для постов с объяснением почему зайдут\n" +
+      "😣 Боли и страхи — явные и глубокие (о которых молчат)\n" +
+      "📅 Контент-план на 2 недели — тема, формат, суть\n" +
+      "💡 5 идей для вирусных Reels с хуком\n" +
+      "🚀 Позиционирование — как выделиться среди конкурентов\n" +
+      "ВАЖНО: конкретно, с примерами, без воды\n",
+
+    bio:
+      "\nТЫ ПИШЕШЬ: шапку профиля Instagram\n" +
+      "ПРАВИЛА:\n" +
+      "- Строго до 150 символов включая эмодзи\n" +
+      "- Никаких заголовков КОМУ/РЕЗУЛЬТАТ/МЕТОД — только живой текст\n" +
+      "- Дай 3 варианта, пронумерованных\n" +
+      "- В каждом варианте: кто ты + что даёшь + призыв к действию (CTA)\n" +
+      "- CTA: ссылка, команда написать, предложение\n" +
+      "- Никаких общих слов — только конкретика\n",
+
+    strategy:
+      "\nТЫ РАЗРАБАТЫВАЕШЬ: стратегию блога\n" +
+      "СТРУКТУРА:\n" +
+      "🔍 Диагностика точки А — где человек сейчас\n" +
+      "🎯 Точка Б — что хочет получить от блога через 3-6 месяцев\n" +
+      "🧱 Фундамент — позиционирование, ниша внутри ниши, голос, отличие\n" +
+      "📅 Контент-система на 30 дней — что и как часто публиковать\n" +
+      "🚀 5 первых шагов с гарантированным результатом\n" +
+      "⚠️ Топ-3 ошибки которые тормозят рост в этой нише\n" +
+      "📊 Метрики — что считать победой через 30/60/90 дней\n" +
+      "ВАЖНО: пиши как наставник который сам прошёл этот путь. Цифры, сроки, конкретика\n",
+  };
+
+  return base + (prompts[typeId] || "") +
+    "\nЗАВЕРШЕНИЕ: Мягко заверши и задай один вопрос — откликается ли результат, нужна ли доработка.\n" +
     "Пиши только на русском языке.";
 }
 
-const cleanText = (text) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+const cleanText = (t) => t.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1");
 
 function Spinner() {
   const [idx, setIdx] = useState(0);
   useState(() => {
-    const t = setInterval(() => setIdx(i => (i + 1) % MOTIVATIONS.length), 1800);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setIdx(i => (i + 1) % MOTIVATIONS.length), 1800);
+    return () => clearInterval(timer);
   });
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 32, gap: 16 }}>
       <div style={{ width: 40, height: 40, border: "3px solid #e2d9f3", borderTop: "3px solid #7c3aed", borderRadius: "50%", animation: "spin .8s linear infinite" }} />
-      <div style={{ color: "#7c3aed", fontSize: 14, fontWeight: 600, textAlign: "center", minHeight: 22 }}>{MOTIVATIONS[idx]}</div>
+      <div style={{ color: "#7c3aed", fontSize: 14, fontWeight: 600, textAlign: "center" }}>{MOTIVATIONS[idx]}</div>
       <div style={{ color: "#c4b5fd", fontSize: 12 }}>Осталось совсем немного…</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -90,7 +164,7 @@ export default function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  const noLength = ["niche", "strategy", "bio"];
+  const noLength = ["niche", "strategy", "bio", "plan"];
   const selectType = (t) => { setType(t); setStyle(t.styles[0]); };
 
   const generate = async () => {
@@ -102,11 +176,13 @@ export default function App() {
       userPrompt = "Проведи полный анализ ниши: «" + topic + "»." + (extra ? "\nДоп. контекст: " + extra : "");
     } else if (type.id === "strategy") {
       userPrompt = "Разработай стратегию блога для: «" + topic + "»." + (extra ? "\nДоп. контекст: " + extra : "");
+    } else if (type.id === "plan") {
+      userPrompt = "Составь контент-план на месяц для ниши: «" + topic + "»." + (extra ? "\nДоп. контекст: " + extra : "");
     } else {
-      userPrompt = "Напиши: " + type.label + " на тему «" + topic + "».\nДлина: " + lenMap[LENGTHS.indexOf(length)] + ".\n" + (extra ? "Контекст: " + extra : "");
+      userPrompt = "Напиши " + type.label + " на тему: «" + topic + "».\nДлина: " + lenMap[LENGTHS.indexOf(length)] + ".\n" + (extra ? "Контекст: " + extra : "");
     }
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -126,13 +202,13 @@ export default function App() {
 
   const sendFollowUp = async () => {
     if (!followUp.trim() || chatLoading) return;
-    const userMsg = followUp.trim();
+    const msg = followUp.trim();
     setFollowUp("");
-    const newHistory = [...chatHistory, { role: "user", content: userMsg }];
-    setChatHistory(newHistory);
+    const hist = [...chatHistory, { role: "user", content: msg }];
+    setChatHistory(hist);
     setChatLoading(true);
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -140,17 +216,17 @@ export default function App() {
           max_tokens: 1500,
           system: buildSystemPrompt(type.id, style),
           messages: [
-            { role: "user", content: "Ты уже написал текст:\n\n" + result },
+            { role: "user", content: "Ты уже написал:\n\n" + result },
             { role: "assistant", content: result },
-            ...newHistory
+            ...hist
           ]
         })
       });
       const data = await res.json();
       const reply = cleanText(data.content?.map(b => b.text || "").join("") || "Ошибка.");
-      setChatHistory([...newHistory, { role: "assistant", content: reply }]);
+      setChatHistory([...hist, { role: "assistant", content: reply }]);
     } catch (e) {
-      setChatHistory([...newHistory, { role: "assistant", content: "__error__" }]);
+      setChatHistory([...hist, { role: "assistant", content: "Ошибка соединения." }]);
     }
     setChatLoading(false);
   };
@@ -174,12 +250,11 @@ export default function App() {
     badge: { display: "inline-flex", alignItems: "center", gap: 6, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 20, padding: "3px 12px", fontSize: 12, fontWeight: 600, marginBottom: 18 },
   };
 
-  const topicLabel = type?.id === "niche" ? "Ниша / тема бизнеса *" : type?.id === "strategy" ? "Ниша / тема блога *" : "Тема / о чём текст *";
-  const topicPlaceholder = type?.id === "niche" ? "Например: нутрициология, психология…" : type?.id === "strategy" ? "Например: блог психолога, коуч по деньгам…" : "Например: курс по инвестициям для мам…";
-  const extraPlaceholder = noLength.includes(type?.id) ? "Аудитория, гео, специализация, цели…" : "ЦА, боли, УТП, ключевые смыслы…";
-  const btnLabel = type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : "✨ Написать текст";
-  const subText = type?.id === "niche" ? "Стратегический разбор ниши 🔍" : type?.id === "strategy" ? "Персональная стратегия блога 📈" : "Написано с пониманием русского менталитета 🧠";
-  const titleText = loading ? "Генерируем..." : type?.id === "niche" ? "Анализ готов" : type?.id === "strategy" ? "Стратегия готова" : "Твой текст готов";
+  const topicLabel = type?.id === "niche" || type?.id === "plan" ? "Ниша / тема бизнеса *" : type?.id === "strategy" ? "Ниша / тема блога *" : "Тема / о чём текст *";
+  const topicPlaceholder = type?.id === "niche" || type?.id === "plan" ? "Например: нутрициология, психология, коучинг…" : type?.id === "strategy" ? "Например: блог психолога, эксперт по деньгам…" : "Например: курс по инвестициям для мам в декрете…";
+  const btnLabel = type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : type?.id === "plan" ? "📅 Составить план" : "✨ Написать текст";
+  const titleText = loading ? "Генерируем..." : type?.id === "niche" ? "Анализ готов" : type?.id === "strategy" ? "Стратегия готова" : type?.id === "plan" ? "Контент-план готов" : "Твой текст готов";
+  const subText = type?.id === "niche" ? "Стратегический разбор ниши 🔍" : type?.id === "strategy" ? "Персональная стратегия блога 📈" : type?.id === "plan" ? "Контент-план на месяц 📅" : "Написано с пониманием русского менталитета 🧠";
 
   if (screen === "main") return (
     <div style={s.wrap}><div style={s.card}>
@@ -231,7 +306,7 @@ export default function App() {
 
       <div style={{ marginTop: 14 }}>
         <label style={s.label}>Контекст (необязательно)</label>
-        <textarea style={s.textarea} placeholder={extraPlaceholder} value={extra} onChange={e => setExtra(e.target.value)} />
+        <textarea style={s.textarea} placeholder="ЦА, боли, УТП, ключевые смыслы…" value={extra} onChange={e => setExtra(e.target.value)} />
       </div>
 
       <button style={{ ...s.btn, marginTop: 20, opacity: (!type || !topic.trim()) ? 0.5 : 1 }}
@@ -251,12 +326,8 @@ export default function App() {
         <div style={{ textAlign: "center", padding: "24px 0" }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>😔</div>
           <div style={{ fontWeight: 600, fontSize: 16, color: "#1a1a2e", marginBottom: 8 }}>Что-то пошло не так</div>
-          <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
-            Возможно, слабый интернет или временный сбой.<br />Попробуй ещё раз.
-          </div>
-          <button style={{ ...s.btn, marginTop: 0 }} onClick={() => { setResult(""); setScreen("main"); }}>
-            🔄 Попробовать снова
-          </button>
+          <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>Возможно, слабый интернет.<br />Попробуй ещё раз.</div>
+          <button style={{ ...s.btn, marginTop: 0 }} onClick={() => { setResult(""); setScreen("main"); }}>🔄 Попробовать снова</button>
         </div>
       ) : (
         <>
@@ -271,8 +342,7 @@ export default function App() {
           {chatHistory.map((m, i) => (
             <div key={i} style={{ marginBottom: 10, display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
               <div style={{
-                maxWidth: "85%", padding: "10px 14px", borderRadius: 14,
-                fontSize: 13, lineHeight: 1.7, whiteSpace: "pre-wrap",
+                maxWidth: "85%", padding: "10px 14px", borderRadius: 14, fontSize: 13, lineHeight: 1.7, whiteSpace: "pre-wrap",
                 background: m.role === "user" ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#f3f4f6",
                 color: m.role === "user" ? "#fff" : "#1f2937",
                 borderBottomRightRadius: m.role === "user" ? 4 : 14,
