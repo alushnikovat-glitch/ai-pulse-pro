@@ -26,8 +26,9 @@ const MOTIVATIONS = [
 
 function buildSystemPrompt(typeId, style) {
   const structureBlock = (typeId === "sales" || typeId === "bio")
-    ? "\nОБЯЗАТЕЛЬНАЯ СТРУКТУРА:\n1. КОМУ\n2. РЕЗУЛЬТАТ\n3. МЕТОД\n4. БОЛЬ\n5. СРОКИ\nПиши живо, не как анкету.\n" +
-      (typeId === "bio" ? "\nВАЖНО: шапка профиля Instagram строго до 150 символов включая эмодзи.\n" : "")
+    ? (typeId === "bio"
+        ? "\nДля шапки профиля Instagram:\n- Строго до 150 символов включая эмодзи\n- Никаких заголовков типа КОМУ, РЕЗУЛЬТАТ, МЕТОД — просто живой текст\n- Дай 3 варианта шапки профиля, каждый с новой строки, пронумерованных\n- В каждом варианте должен быть призыв к действию (CTA): ссылка, команда, предложение написать\n- Никаких звёздочек и markdown-разметки в тексте\n"
+        : "\nОБЯЗАТЕЛЬНАЯ СТРУКТУРА:\n1. КОМУ\n2. РЕЗУЛЬТАТ\n3. МЕТОД\n4. БОЛЬ\n5. СРОКИ\nПиши живо, не как анкету. Никаких звёздочек и markdown-разметки.\n")
     : "";
 
   const nicheBlock = typeId === "niche"
@@ -51,10 +52,13 @@ function buildSystemPrompt(typeId, style) {
     "- Никаких клише: уникальный, комплексный подход — в мусор\n" +
     "- Короткие и длинные фразы вперемешку. Паузы. Многоточия\n" +
     "- Один финальный текст, готовый к публикации\n" +
+    "- Никаких звёздочек ** и markdown-разметки в тексте\n" +
     structureBlock + nicheBlock + strategyBlock +
     "\nЗАВЕРШЕНИЕ: Задай один вопрос — откликается ли результат, нужна ли доработка.\n" +
     "Пиши только на русском языке.";
 }
+
+const cleanText = (text) => text.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
 
 function Spinner() {
   const [idx, setIdx] = useState(0);
@@ -65,9 +69,7 @@ function Spinner() {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: 32, gap: 16 }}>
       <div style={{ width: 40, height: 40, border: "3px solid #e2d9f3", borderTop: "3px solid #7c3aed", borderRadius: "50%", animation: "spin .8s linear infinite" }} />
-      <div style={{ color: "#7c3aed", fontSize: 14, fontWeight: 600, textAlign: "center", minHeight: 22 }}>
-        {MOTIVATIONS[idx]}
-      </div>
+      <div style={{ color: "#7c3aed", fontSize: 14, fontWeight: 600, textAlign: "center", minHeight: 22 }}>{MOTIVATIONS[idx]}</div>
       <div style={{ color: "#c4b5fd", fontSize: 12 }}>Осталось совсем немного…</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -89,7 +91,6 @@ export default function App() {
   const [chatLoading, setChatLoading] = useState(false);
 
   const noLength = ["niche", "strategy", "bio"];
-
   const selectType = (t) => { setType(t); setStyle(t.styles[0]); };
 
   const generate = async () => {
@@ -116,7 +117,7 @@ export default function App() {
         })
       });
       const data = await res.json();
-      setResult(data.content?.map(b => b.text || "").join("") || "Ошибка генерации.");
+      setResult(cleanText(data.content?.map(b => b.text || "").join("") || "Ошибка генерации."));
     } catch (e) {
       setResult("__error__");
     }
@@ -146,7 +147,7 @@ export default function App() {
         })
       });
       const data = await res.json();
-      const reply = data.content?.map(b => b.text || "").join("") || "Ошибка.";
+      const reply = cleanText(data.content?.map(b => b.text || "").join("") || "Ошибка.");
       setChatHistory([...newHistory, { role: "assistant", content: reply }]);
     } catch (e) {
       setChatHistory([...newHistory, { role: "assistant", content: "__error__" }]);
@@ -178,6 +179,7 @@ export default function App() {
   const extraPlaceholder = noLength.includes(type?.id) ? "Аудитория, гео, специализация, цели…" : "ЦА, боли, УТП, ключевые смыслы…";
   const btnLabel = type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : "✨ Написать текст";
   const subText = type?.id === "niche" ? "Стратегический разбор ниши 🔍" : type?.id === "strategy" ? "Персональная стратегия блога 📈" : "Написано с пониманием русского менталитета 🧠";
+  const titleText = loading ? "Генерируем..." : type?.id === "niche" ? "Анализ готов" : type?.id === "strategy" ? "Стратегия готова" : "Твой текст готов";
 
   if (screen === "main") return (
     <div style={s.wrap}><div style={s.card}>
@@ -242,7 +244,7 @@ export default function App() {
   if (screen === "result") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={s.chip}>{type?.label} · {style}</div>
-      <div style={s.title}>{type?.id === "niche" ? "Анализ готов" : type?.id === "strategy" ? "Стратегия готова" : "Твой текст готов"}</div>
+      <div style={s.title}>{titleText}</div>
       <div style={s.sub}>{subText}</div>
 
       {loading ? <Spinner /> : result === "__error__" ? (
@@ -250,7 +252,7 @@ export default function App() {
           <div style={{ fontSize: 40, marginBottom: 12 }}>😔</div>
           <div style={{ fontWeight: 600, fontSize: 16, color: "#1a1a2e", marginBottom: 8 }}>Что-то пошло не так</div>
           <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 24, lineHeight: 1.6 }}>
-            Возможно, слабый интернет или временный сбой.<br />Попробуй ещё раз — обычно со второго раза работает.
+            Возможно, слабый интернет или временный сбой.<br />Попробуй ещё раз.
           </div>
           <button style={{ ...s.btn, marginTop: 0 }} onClick={() => { setResult(""); setScreen("main"); }}>
             🔄 Попробовать снова
