@@ -5,6 +5,7 @@ const TEXT_TYPES = [
   { id: "sales",    label: "💰 Оффер / УТП",         desc: "Продающий текст, лендинг",     styles: ["Прямой и честный", "Через страх и решение", "Через результат клиента"] },
   { id: "reels",    label: "🎬 Reels / Видео",       desc: "Сценарий с хуком и CTA",       styles: ["Провокационный хук", "Сторителлинг", "Список / Инструкция"] },
   { id: "promo",    label: "🔥 Прогрев / Сторис",    desc: "Серия дней, воронка",          styles: ["Уязвимость + Экспертность", "День за днём к офферу", "Через ценности и смыслы"] },
+  { id: "threads",  label: "🧵 Threads",             desc: "Цепочка постов с вовлечением", styles: ["Провокационный старт", "Через личную историю", "Список / Инсайты"] },
   { id: "plan",     label: "📅 Контент-план",        desc: "План публикаций на месяц",     styles: ["По болям аудитории", "По воронке продаж", "Микс форматов"] },
   { id: "niche",    label: "🔍 Анализ ниши",         desc: "Темы, боли, контент-план",     styles: ["Стратегический разбор", "Через боли аудитории", "Вирусные форматы"] },
   { id: "bio",      label: "✨ Шапка профиля",        desc: "Bio для Instagram / Telegram", styles: ["Чёткая и конкретная", "С характером и голосом", "Через результат клиента"] },
@@ -12,7 +13,7 @@ const TEXT_TYPES = [
 ];
 
 const LENGTHS = ["Короткий (до 100 слов)", "Средний (100–250 слов)", "Длинный (250+ слов)"];
-const NO_LENGTH = ["niche", "strategy", "bio", "plan", "promo"];
+const NO_LENGTH = ["niche", "strategy", "bio", "plan", "promo", "threads"];
 
 const MOTIVATIONS = [
   "Уже думаю над смыслами… 🧠",
@@ -49,7 +50,6 @@ function buildPrompt(typeId, style) {
       "3. ИНСАЙТ — неожиданный поворот или вывод\n" +
       "4. ПОЛЬЗА — конкретный совет или шаг\n" +
       "5. МЯГКИЙ CTA — вопрос к аудитории без давления\n",
-
     sales:
       "\nСТРУКТУРА ОФФЕРА:\n" +
       "1. КОМУ — точный портрет человека в его ситуации\n" +
@@ -58,7 +58,6 @@ function buildPrompt(typeId, style) {
       "4. МЕТОД — как работает, в чём уникальность\n" +
       "5. СРОКИ — когда будет результат\n" +
       "6. CTA — конкретный следующий шаг без давления\n",
-
     reels:
       "\nСЦЕНАРИЙ REELS:\n" +
       "0-3 сек: ХУК — провокация, боль или обещание\n" +
@@ -66,7 +65,6 @@ function buildPrompt(typeId, style) {
       "10-25 сек: РЕШЕНИЕ — 3 шага или одна сильная идея\n" +
       "25-30 сек: CTA — что сделать прямо сейчас\n" +
       "Пиши как сценарий: что говорить, что показывать, текст на экране\n",
-
     promo:
       "\nСЕРИЯ ПРОГРЕВА НА 6 ДНЕЙ:\n" +
       "День 1: Контекст — кто ты, через историю без регалий\n" +
@@ -76,14 +74,19 @@ function buildPrompt(typeId, style) {
       "День 5: Решение — продукт через результат или кейс\n" +
       "День 6: Оффер — мягкое закрытие с ограничением\n" +
       "Каждый день заканчивается вопросом или интригой\n",
-
+    threads:
+      "\nЦЕПОЧКА ДЛЯ THREADS:\n" +
+      "Пост 1 (хук): провокация или неожиданное утверждение\n" +
+      "Посты 2-4: раскрываешь идею по шагам, каждый заканчивается интригой\n" +
+      "Пост 5: инсайт или неожиданный поворот\n" +
+      "Пост 6 (финал): вывод + мягкий CTA\n" +
+      "Каждый пост до 500 символов, читается отдельно но тянет к следующему\n",
     plan:
       "\nКОНТЕНТ-ПЛАН НА МЕСЯЦ:\n" +
       "30 постов: день / формат / тема / суть в одном предложении\n" +
       "Соотношение: 40% польза, 30% личное и доверие, 20% продажи, 10% вовлечение\n" +
       "Форматы чередуй: пост, Reels, сторис, карусель\n" +
       "Темы ведут по воронке: знакомство — доверие — желание — покупка\n",
-
     niche:
       "\nАНАЛИЗ НИШИ:\n" +
       "Портрет аудитории — кто, что тревожит, о чём мечтают\n" +
@@ -92,15 +95,13 @@ function buildPrompt(typeId, style) {
       "Контент-план на 2 недели — тема, формат, суть\n" +
       "5 идей для Reels с хуком\n" +
       "Позиционирование — как выделиться среди конкурентов\n",
-
     bio:
       "\nШАПКА ПРОФИЛЯ INSTAGRAM:\n" +
-      "- Строго до 150 символов включая эмодзи\n" +
-      "- Никаких заголовков — только живой текст\n" +
-      "- Дай 3 варианта пронумерованных\n" +
-      "- В каждом: кто ты + что даёшь + призыв к действию\n" +
-      "- Только конкретика\n",
-
+      "Строго до 150 символов включая эмодзи\n" +
+      "Никаких заголовков — только живой текст\n" +
+      "Дай 3 варианта пронумерованных\n" +
+      "В каждом: кто ты + что даёшь + призыв к действию\n" +
+      "Только конкретика\n",
     strategy:
       "\nСТРАТЕГИЯ БЛОГА:\n" +
       "Диагностика точки А — где человек сейчас\n" +
@@ -156,13 +157,14 @@ export default function App() {
     setLoading(true); setScreen("result"); setResult(""); setChat([]);
     const lenMap = ["короткий текст до 100 слов", "текст 100–250 слов", "длинный текст 250+ слов"];
     let q = "";
-    if (type.id === "niche") q = "Проведи полный анализ ниши: «" + topic + "»." + (extra ? "\n" + extra : "");
-    else if (type.id === "strategy") q = "Разработай стратегию блога для: «" + topic + "»." + (extra ? "\n" + extra : "");
-    else if (type.id === "plan") q = "Составь контент-план на месяц для ниши: «" + topic + "»." + (extra ? "\n" + extra : "");
-    else if (type.id === "promo") q = "Напиши серию прогрева на 6 дней для: «" + topic + "»." + (extra ? "\n" + extra : "");
-    else q = "Напиши " + type.label + " на тему: «" + topic + "».\nДлина: " + lenMap[LENGTHS.indexOf(length)] + ".\n" + (extra ? extra : "");
+    if (type.id === "niche") q = "Проведи полный анализ ниши: " + topic + "." + (extra ? "\n" + extra : "");
+    else if (type.id === "strategy") q = "Разработай стратегию блога для: " + topic + "." + (extra ? "\n" + extra : "");
+    else if (type.id === "plan") q = "Составь контент-план на месяц для ниши: " + topic + "." + (extra ? "\n" + extra : "");
+    else if (type.id === "promo") q = "Напиши серию прогрева на 6 дней для: " + topic + "." + (extra ? "\n" + extra : "");
+    else if (type.id === "threads") q = "Напиши цепочку из 6 постов для Threads на тему: " + topic + "." + (extra ? "\n" + extra : "");
+    else q = "Напиши " + type.label + " на тему: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + ".\n" + (extra ? extra : "");
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -184,7 +186,7 @@ export default function App() {
     const hist = [...chat, { role: "user", content: msg }];
     setChat(hist); setChatLoading(true);
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -199,8 +201,7 @@ export default function App() {
         })
       });
       const data = await res.json();
-      const reply = clean(data.content?.map(b => b.text || "").join("") || "Ошибка.");
-      setChat([...hist, { role: "assistant", content: reply }]);
+      setChat([...hist, { role: "assistant", content: clean(data.content?.map(b => b.text || "").join("") || "Ошибка.") }]);
     } catch (e) { setChat([...hist, { role: "assistant", content: "Ошибка соединения." }]); }
     setChatLoading(false);
   };
@@ -235,7 +236,6 @@ export default function App() {
       <div style={s.badge}>✦ AI Pulse PRO активирован</div>
       <div style={s.title}>Создать текст</div>
       <div style={s.sub}>Выбери формат — напишу с душой и пониманием аудитории</div>
-
       <label style={s.lbl}>Формат</label>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:18 }}>
         {TEXT_TYPES.map(t => (
@@ -249,7 +249,6 @@ export default function App() {
           </div>
         ))}
       </div>
-
       {type && (
         <div style={{ marginBottom:16 }}>
           <label style={s.lbl}>Стиль подачи</label>
@@ -265,10 +264,8 @@ export default function App() {
           </div>
         </div>
       )}
-
       <label style={s.lbl}>{tLabel}</label>
       <input style={s.inp} placeholder={tPlaceholder} value={topic} onChange={e => setTopic(e.target.value)} />
-
       {!NO_LENGTH.includes(type?.id) && (
         <div style={{ marginTop:14 }}>
           <label style={s.lbl}>Длина</label>
@@ -277,12 +274,10 @@ export default function App() {
           </select>
         </div>
       )}
-
       <div style={{ marginTop:14 }}>
         <label style={s.lbl}>Контекст (необязательно)</label>
         <textarea style={s.ta} placeholder="ЦА, боли, УТП, ключевые смыслы…" value={extra} onChange={e => setExtra(e.target.value)} />
       </div>
-
       <button style={{ ...s.btn, marginTop:20, opacity:(!type || !topic.trim()) ? 0.5 : 1 }}
         onClick={generate} disabled={!type || !topic.trim()}>
         {btnLabel}
@@ -295,7 +290,6 @@ export default function App() {
       <div style={s.chip}>{type?.label} · {style}</div>
       <div style={s.title}>{titleText}</div>
       <div style={s.sub}>{subText}</div>
-
       {loading ? <Spinner /> : result === "__error__" ? (
         <div style={{ textAlign:"center", padding:"24px 0" }}>
           <div style={{ fontSize:40, marginBottom:12 }}>😔</div>
@@ -309,7 +303,6 @@ export default function App() {
           <button style={s.btn} onClick={copy}>{copied ? "✅ Скопировано!" : "📋 Скопировать"}</button>
         </>
       )}
-
       {!loading && result && result !== "__error__" && (
         <div style={{ marginTop:20 }}>
           <div style={{ borderTop:"1px solid #e5e7eb", marginBottom:14 }} />
@@ -338,7 +331,6 @@ export default function App() {
           </div>
         </div>
       )}
-
       <button style={s.btnS} onClick={reset}>← Написать ещё один текст</button>
     </div></div>
   );
