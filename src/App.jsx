@@ -163,7 +163,7 @@ export default function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  const noLength = ["niche", "strategy", "bio", "plan"];
+  const noLength = ["niche", "strategy", "bio", "plan", "promo"];
   const selectType = (t) => { setType(t); setStyle(t.styles[0]); };
 
   const generate = async () => {
