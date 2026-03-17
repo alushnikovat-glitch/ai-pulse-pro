@@ -1,4 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+const TRIAL_CODES = ["TEST001", "TEST002", "TEST003"];
+const PAID_CODES  = ["PRO2024", "PRO2025", "КУПИТЬ001"];
+const TRIAL_LIMIT = 5;
+
+function checkCode(raw) {
+  const c = raw.trim().toUpperCase();
+  if (TRIAL_CODES.includes(c)) return { valid: true, type: "trial" };
+  if (PAID_CODES.includes(c))  return { valid: true, type: "paid" };
+  return { valid: false };
+}
 
 const TEXT_TYPES = [
   { id: "post",     label: "📱 Пост / Мотивация",   desc: "Instagram, Telegram, VK",      styles: ["Живой / Кухонный", "Через личную историю", "Через боль и инсайт"] },
@@ -13,9 +24,9 @@ const TEXT_TYPES = [
 ];
 
 const LENGTHS = ["Короткий (до 100 слов)", "Средний (100–250 слов)", "Длинный (250+ слов)"];
-const NO_LENGTH = ["niche", "strategy", "bio", "plan", "promo", "threads"];
+const NO_LEN = ["niche", "strategy", "bio", "plan", "promo", "threads"];
 
-const MOTIVATIONS = [
+const MOTS = [
   "Уже думаю над смыслами… 🧠",
   "Ищу правильные слова… ✍️",
   "Чувствую твою аудиторию… 👥",
@@ -64,13 +75,13 @@ const clean = (t) => t.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1
 function Spinner() {
   const [idx, setIdx] = useState(0);
   useState(() => {
-    const timer = setInterval(() => setIdx(i => (i + 1) % MOTIVATIONS.length), 1800);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setIdx(i => (i + 1) % MOTS.length), 1800);
+    return () => clearInterval(t);
   });
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:32, gap:16 }}>
       <div style={{ width:40, height:40, border:"3px solid #e2d9f3", borderTop:"3px solid #7c3aed", borderRadius:"50%", animation:"spin .8s linear infinite" }} />
-      <div style={{ color:"#7c3aed", fontSize:14, fontWeight:600, textAlign:"center" }}>{MOTIVATIONS[idx]}</div>
+      <div style={{ color:"#7c3aed", fontSize:14, fontWeight:600, textAlign:"center" }}>{MOTS[idx]}</div>
       <div style={{ color:"#c4b5fd", fontSize:12 }}>Осталось совсем немного…</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -78,7 +89,12 @@ function Spinner() {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState("main");
+  const [screen, setScreen] = useState("access");
+  const [codeInput, setCodeInput] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [accessType, setAccessType] = useState(null);
+  const [userCode, setUserCode] = useState("");
+  const [usageCount, setUsageCount] = useState(0);
   const [type, setType] = useState(null);
   const [style, setStyle] = useState("");
   const [topic, setTopic] = useState("");
@@ -90,11 +106,53 @@ export default function App() {
   const [followUp, setFollowUp] = useState("");
   const [chat, setChat] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [expandedIdx, setExpandedIdx] = useState(null);
+  const [copiedIdx, setCopiedIdx] = useState(null);
+
+  const submitCode = () => {
+    const res = checkCode(codeInput);
+    if (res.valid) {
+      setAccessType(res.type);
+      setUserCode(codeInput.trim().toUpperCase());
+      setUsageCount(0);
+      setScreen("main");
+      setCodeError("");
+    } else {
+      setCodeError("Неверный код. Попробуй ещё раз.");
+    }
+  };
+
+  const saveToHistory = async (entry) => {
+    try {
+      await fetch("/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", code: userCode, entry })
+      });
+    } catch (e) {}
+  };
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "load", code: userCode })
+      });
+      const data = await res.json();
+      setHistory(data.items || []);
+    } catch (e) { setHistory([]); }
+    setHistoryLoading(false);
+  };
 
   const pickType = (t) => { setType(t); setStyle(t.styles[0]); };
 
   const generate = async () => {
     if (!type || !topic.trim()) return;
+    if (accessType === "trial" && usageCount >= TRIAL_LIMIT) { setScreen("upgrade"); return; }
     setLoading(true); setScreen("result"); setResult(""); setChat([]);
     const lenMap = ["короткий текст до 100 слов", "текст 100–250 слов", "длинный текст 250+ слов"];
     let q = "";
@@ -103,7 +161,7 @@ export default function App() {
     else if (type.id === "plan") q = "Составь контент-план на месяц для ниши: " + topic + "." + (extra ? "\n" + extra : "");
     else if (type.id === "promo") q = "Напиши серию прогрева на 6 дней для: " + topic + "." + (extra ? "\n" + extra : "");
     else if (type.id === "threads") q = "Напиши цепочку из 6 постов для Threads на тему: " + topic + "." + (extra ? "\n" + extra : "");
-    else q = "Напиши " + type.label + " на тему: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + ".\n" + (extra ? extra : "");
+    else q = "Напиши " + type.label + " на тему: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + ".\n" + (extra || "");
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -116,7 +174,15 @@ export default function App() {
         })
       });
       const data = await res.json();
-      setResult(clean(data.content?.map(b => b.text || "").join("") || "Ошибка генерации."));
+      const text = clean(data.content?.map(b => b.text || "").join("") || "Ошибка генерации.");
+      setResult(text);
+      setUsageCount(c => c + 1);
+      await saveToHistory({
+        type: type.label,
+        topic,
+        text,
+        date: new Date().toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })
+      });
     } catch (e) { setResult("__error__"); }
     setLoading(false);
   };
@@ -148,6 +214,7 @@ export default function App() {
   };
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const copyHistoryItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
   const reset = () => { setType(null); setStyle(""); setTopic(""); setExtra(""); setResult(""); setChat([]); setFollowUp(""); setScreen("main"); };
 
   const s = {
@@ -163,7 +230,7 @@ export default function App() {
     sel: { width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, background:"#fff", outline:"none", boxSizing:"border-box" },
     box: { background:"#f9fafb", border:"1.5px solid #e5e7eb", borderRadius:14, padding:18, fontSize:14, lineHeight:1.8, color:"#1f2937", whiteSpace:"pre-wrap", minHeight:140 },
     chip: { display:"inline-block", background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600, marginBottom:14 },
-    badge: { display:"inline-flex", alignItems:"center", gap:6, background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#15803d", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600, marginBottom:18 },
+    badge: { display:"inline-flex", alignItems:"center", gap:6, background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#15803d", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600 },
   };
 
   const tLabel = ["niche","plan"].includes(type?.id) ? "Ниша / тема бизнеса *" : type?.id === "strategy" ? "Ниша / тема блога *" : "Тема / о чём *";
@@ -172,9 +239,119 @@ export default function App() {
   const titleText = loading ? "Генерируем..." : type?.id === "niche" ? "Анализ готов" : type?.id === "strategy" ? "Стратегия готова" : type?.id === "plan" ? "Контент-план готов" : "Твой текст готов";
   const subText = type?.id === "niche" ? "Стратегический разбор ниши 🔍" : type?.id === "strategy" ? "Персональная стратегия блога 📈" : type?.id === "plan" ? "Контент-план на месяц 📅" : "Написано с пониманием русского менталитета 🧠";
 
+  // ДОСТУП
+  if (screen === "access") return (
+    <div style={s.wrap}><div style={s.card}>
+      <div style={{ textAlign:"center", marginBottom:24 }}>
+        <div style={{ fontSize:48, marginBottom:8 }}>🧠</div>
+        <div style={s.title}>AI Pulse PRO</div>
+        <div style={s.sub}>Маркетинговый ассистент с пониманием русских смыслов</div>
+      </div>
+      <label style={s.lbl}>Код доступа</label>
+      <input style={s.inp} placeholder="Введи код доступа…" value={codeInput}
+        onChange={e => setCodeInput(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && submitCode()} />
+      {codeError && <div style={{ color:"#ef4444", fontSize:13, marginTop:6 }}>{codeError}</div>}
+      <button style={s.btn} onClick={submitCode}>Войти →</button>
+      <div style={{ textAlign:"center", marginTop:16, fontSize:13, color:"#9ca3af" }}>
+        Нет кода?{" "}
+        <span style={{ color:"#7c3aed", fontWeight:600, cursor:"pointer" }} onClick={() => setScreen("upgrade")}>
+          Получить доступ
+        </span>
+      </div>
+    </div></div>
+  );
+
+  // ПОКУПКА
+  if (screen === "upgrade") return (
+    <div style={s.wrap}><div style={s.card}>
+      <div style={{ textAlign:"center", marginBottom:24 }}>
+        <div style={{ fontSize:48, marginBottom:8 }}>🚀</div>
+        <div style={s.title}>{accessType === "trial" ? "Тест завершён!" : "Полный доступ"}</div>
+        <div style={s.sub}>{accessType === "trial" ? "Ты использовал все 5 бесплатных генераций" : "Открой все возможности AI Pulse PRO"}</div>
+      </div>
+      <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", borderRadius:16, padding:24, marginBottom:20 }}>
+        <div style={{ fontSize:32, fontWeight:700, color:"#7c3aed", textAlign:"center", marginBottom:4 }}>1 290 ₽</div>
+        <div style={{ textAlign:"center", color:"#6b7280", fontSize:13, marginBottom:16 }}>Полный доступ на 3 месяца</div>
+        {["Безлимитные генерации", "Все 9 форматов контента", "История последних 20 текстов", "Маркетолог с опытом 20+ лет"].map(f => (
+          <div key={f} style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, color:"#374151", marginBottom:6 }}>
+            <span style={{ color:"#7c3aed" }}>✓</span> {f}
+          </div>
+        ))}
+      </div>
+      <div style={{ background:"#f9fafb", borderRadius:12, padding:16, fontSize:13, color:"#374151", lineHeight:1.7, marginBottom:16 }}>
+        Напиши в Telegram: <strong>@твой_ник</strong><br />
+        После оплаты пришлю код в течение 15 минут
+      </div>
+      <button style={s.btn}>Написать в Telegram</button>
+      {accessType && <button style={s.btnS} onClick={() => setScreen("main")}>← Вернуться</button>}
+      {!accessType && <button style={s.btnS} onClick={() => setScreen("access")}>← Ввести код</button>}
+    </div></div>
+  );
+
+  // ИСТОРИЯ
+  if (screen === "history") return (
+    <div style={s.wrap}><div style={s.card}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+        <div style={s.title}>📂 История</div>
+        <button style={{ ...s.btnS, width:"auto", padding:"6px 14px", marginTop:0 }} onClick={() => setScreen("main")}>← Назад</button>
+      </div>
+
+      <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:12, padding:"12px 16px", fontSize:13, color:"#92400e", marginBottom:20, lineHeight:1.6 }}>
+        💡 Сохраняются последние <strong>20 текстов</strong>. Если хочешь сохранить важный текст навсегда — скопируй его в заметки.
+      </div>
+
+      {historyLoading ? (
+        <div style={{ textAlign:"center", padding:32, color:"#9ca3af" }}>Загружаем историю…</div>
+      ) : history.length === 0 ? (
+        <div style={{ textAlign:"center", padding:32, color:"#9ca3af" }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
+          <div>История пока пуста</div>
+          <div style={{ fontSize:12, marginTop:4 }}>Сгенерируй первый текст!</div>
+        </div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {history.map((item, i) => (
+            <div key={i} style={{ border:"1.5px solid #e5e7eb", borderRadius:14, overflow:"hidden" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"12px 16px", background:"#f9fafb", cursor:"pointer" }}
+                onClick={() => setExpandedIdx(expandedIdx === i ? null : i)}>
+                <div>
+                  <div style={{ fontWeight:600, fontSize:13, color:"#1a1a2e" }}>{item.type}</div>
+                  <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>{item.topic} · {item.date}</div>
+                </div>
+                <div style={{ fontSize:18, color:"#9ca3af" }}>{expandedIdx === i ? "▲" : "▼"}</div>
+              </div>
+              {expandedIdx === i && (
+                <div style={{ padding:"14px 16px", borderTop:"1px solid #e5e7eb" }}>
+                  <div style={{ fontSize:13, lineHeight:1.8, color:"#1f2937", whiteSpace:"pre-wrap", marginBottom:12 }}>{item.text}</div>
+                  <button style={{ ...s.btn, marginTop:0, fontSize:13, padding:"9px" }}
+                    onClick={() => copyHistoryItem(item.text, i)}>
+                    {copiedIdx === i ? "✅ Скопировано!" : "📋 Скопировать"}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div></div>
+  );
+
+  // ГЛАВНАЯ
   if (screen === "main") return (
     <div style={s.wrap}><div style={s.card}>
-      <div style={s.badge}>✦ AI Pulse PRO активирован</div>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+        <div style={s.badge}>✦ AI Pulse PRO</div>
+        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+          {accessType === "trial" && (
+            <div style={{ fontSize:12, color:"#9ca3af" }}>{usageCount}/{TRIAL_LIMIT}</div>
+          )}
+          <button style={{ background:"#f3f4f6", border:"none", borderRadius:10, padding:"6px 12px", fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
+            onClick={() => { loadHistory(); setScreen("history"); }}>
+            📂 История
+          </button>
+        </div>
+      </div>
       <div style={s.title}>Создать текст</div>
       <div style={s.sub}>Выбери формат — напишу с душой и пониманием аудитории</div>
       <label style={s.lbl}>Формат</label>
@@ -207,7 +384,7 @@ export default function App() {
       )}
       <label style={s.lbl}>{tLabel}</label>
       <input style={s.inp} placeholder={tPlaceholder} value={topic} onChange={e => setTopic(e.target.value)} />
-      {!NO_LENGTH.includes(type?.id) && (
+      {!NO_LEN.includes(type?.id) && (
         <div style={{ marginTop:14 }}>
           <label style={s.lbl}>Длина</label>
           <select style={s.sel} value={length} onChange={e => setLength(e.target.value)}>
@@ -226,6 +403,7 @@ export default function App() {
     </div></div>
   );
 
+  // РЕЗУЛЬТАТ
   if (screen === "result") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={s.chip}>{type?.label} · {style}</div>
@@ -235,12 +413,12 @@ export default function App() {
         <div style={{ textAlign:"center", padding:"24px 0" }}>
           <div style={{ fontSize:40, marginBottom:12 }}>😔</div>
           <div style={{ fontWeight:600, fontSize:16, color:"#1a1a2e", marginBottom:8 }}>Что-то пошло не так</div>
-          <div style={{ fontSize:13, color:"#6b7280", marginBottom:24, lineHeight:1.6 }}>Попробуй ещё раз.</div>
+          <div style={{ fontSize:13, color:"#6b7280", marginBottom:24 }}>Попробуй ещё раз.</div>
           <button style={{ ...s.btn, marginTop:0 }} onClick={() => { setResult(""); setScreen("main"); }}>🔄 Попробовать снова</button>
         </div>
       ) : (
         <>
-          <div style={{ ...s.box, fontSize:NO_LENGTH.includes(type?.id) ? 13 : 14 }}>{result}</div>
+          <div style={{ ...s.box, fontSize:NO_LEN.includes(type?.id) ? 13 : 14 }}>{result}</div>
           <button style={s.btn} onClick={copy}>{copied ? "✅ Скопировано!" : "📋 Скопировать"}</button>
         </>
       )}
