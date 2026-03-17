@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-const TRIAL_CODES = ["TEST001", "TEST002", "TEST003"];
-const PAID_CODES  = ["PRO2024", "PRO2025", "КУПИТЬ001"];
+const TRIAL_CODES = ["TEST", "test", "тест"];
+const PAID_CODES  = ["PRO2026", "PRO2027", "КУПИТЬ007"];
 const TRIAL_LIMIT = 5;
 
 function checkCode(raw) {
@@ -12,19 +12,20 @@ function checkCode(raw) {
 }
 
 const TEXT_TYPES = [
-  { id: "post",     label: "📱 Пост / Мотивация",   desc: "Instagram, Telegram, VK",      styles: ["Живой / Кухонный", "Через личную историю", "Через боль и инсайт"] },
-  { id: "sales",    label: "💰 Оффер / УТП",         desc: "Продающий текст, лендинг",     styles: ["Прямой и честный", "Через страх и решение", "Через результат клиента"] },
-  { id: "reels",    label: "🎬 Reels / Видео",       desc: "Сценарий с хуком и CTA",       styles: ["Провокационный хук", "Сторителлинг", "Список / Инструкция"] },
-  { id: "promo",    label: "🔥 Прогрев / Сторис",    desc: "Серия дней, воронка",          styles: ["Уязвимость + Экспертность", "День за днём к офферу", "Через ценности и смыслы"] },
-  { id: "threads",  label: "🧵 Threads",             desc: "Цепочка постов с вовлечением", styles: ["Провокационный старт", "Через личную историю", "Список / Инсайты"] },
-  { id: "plan",     label: "📅 Контент-план",        desc: "План публикаций на месяц",     styles: ["По болям аудитории", "По воронке продаж", "Микс форматов"] },
-  { id: "niche",    label: "🔍 Анализ ниши",         desc: "Темы, боли, контент-план",     styles: ["Стратегический разбор", "Через боли аудитории", "Вирусные форматы"] },
-  { id: "bio",      label: "✨ Шапка профиля",        desc: "Bio для Instagram / Telegram", styles: ["Чёткая и конкретная", "С характером и голосом", "Через результат клиента"] },
-  { id: "strategy", label: "📈 Стратегия блога",     desc: "С чего начать и как расти",    styles: ["Пошаговый план", "Через точку А в точку Б", "Быстрый старт с результатом"] },
+  { id: "post",     label: "📱 Пост",                desc: "Instagram / Telegram / VK",      styles: ["Живой / Кухонный", "Через личную историю", "Через боль и инсайт"] },
+  { id: "carousel", label: "🎠 Карусель Instagram",  desc: "10 идей + готовые слайды",        styles: ["Разрушение мифа", "Это про меня", "Провокация и споры"] },
+  { id: "threads",  label: "🧵 Threads / Живой момент", desc: "Вирусный пост Instagram",      styles: ["Восторг и удивление", "Я в шоке от результата", "Только что произошло"] },
+  { id: "reels",    label: "🎬 Reels / Видео",        desc: "Сценарий с хуком и CTA",         styles: ["Провокационный хук", "Сторителлинг", "Список / Инструкция"] },
+  { id: "promo",    label: "🔥 Прогрев / Сторис",     desc: "Серия 6 дней, воронка",          styles: ["Уязвимость + Экспертность", "День за днём к офферу", "Через ценности и смыслы"] },
+  { id: "sales",    label: "💰 Оффер / УТП",           desc: "Продающий текст, лендинг",       styles: ["Прямой и честный", "Через страх и решение", "Через результат клиента"] },
+  { id: "plan",     label: "📅 Контент-план",          desc: "План публикаций на месяц",       styles: ["По болям аудитории", "По воронке продаж", "Микс форматов"] },
+  { id: "niche",    label: "🔍 Анализ ниши",           desc: "Боли, темы, позиционирование",   styles: ["Стратегический разбор", "Через боли аудитории", "Вирусные форматы"] },
+  { id: "bio",      label: "✨ Шапка профиля",          desc: "Bio Instagram / Telegram",       styles: ["Чёткая и конкретная", "С характером и голосом", "Через результат клиента"] },
+  { id: "strategy", label: "📈 Стратегия блога",       desc: "С чего начать и как расти",      styles: ["Пошаговый план", "Через точку А в точку Б", "Быстрый старт с результатом"] },
 ];
 
 const LENGTHS = ["Короткий (до 100 слов)", "Средний (100–250 слов)", "Длинный (250+ слов)"];
-const NO_LEN = ["niche", "strategy", "bio", "plan", "promo", "threads"];
+const NO_LEN = ["niche", "strategy", "bio", "plan", "promo", "threads", "carousel"];
 
 const MOTS = [
   "Уже думаю над смыслами… 🧠",
@@ -51,18 +52,109 @@ function buildPrompt(typeId, style) {
     "- Никаких звёздочек и markdown-разметки\n" +
     "- Никаких клише: уникальный, комплексный подход — в мусор\n" +
     "- Короткие и длинные фразы вперемешку. Паузы. Многоточия\n" +
-    "- Пиши как человек который понимает проблему изнутри\n";
+    "- Пиши как человек который понимает проблему изнутри\n" +
+    "- ВАЖНО: никогда не пиши названия блоков в тексте — ни КОМУ, ни БОЛЬ, ни РЕЗУЛЬТАТ, ни МЕТОД, ни СРОКИ, ни ХУК, ни CTA, ни ДЕНЬ 1. Только живой текст без меток.\n";
 
   const map = {
-    post: "\nСТРУКТУРА ПОСТА:\n1. ХУК — 1-2 строки которые останавливают скролл\n2. ИСТОРИЯ / БОЛЬ — личная ситуация или узнаваемая проблема\n3. ИНСАЙТ — неожиданный поворот или вывод\n4. ПОЛЬЗА — конкретный совет или шаг\n5. МЯГКИЙ CTA — вопрос к аудитории без давления\n",
-    sales: "\nСТРУКТУРА ОФФЕРА:\n1. КОМУ — точный портрет человека в его ситуации\n2. БОЛЬ — острая проблема своими словами без смягчений\n3. РЕЗУЛЬТАТ — что конкретно получит в измеримых словах\n4. МЕТОД — как работает, в чём уникальность\n5. СРОКИ — когда будет результат\n6. CTA — конкретный следующий шаг без давления\n",
-    reels: "\nСЦЕНАРИЙ REELS:\n0-3 сек: ХУК — провокация, боль или обещание\n3-10 сек: ПРОБЛЕМА — раскрываешь боль\n10-25 сек: РЕШЕНИЕ — 3 шага или одна сильная идея\n25-30 сек: CTA — что сделать прямо сейчас\nПиши как сценарий: что говорить, что показывать, текст на экране\n",
-    promo: "\nСЕРИЯ ПРОГРЕВА НА 6 ДНЕЙ:\nДень 1: Контекст — кто ты, через историю без регалий\nДень 2: Боль — понимаешь проблему изнутри\nДень 3: Уязвимость — личная история провала, строит доверие\nДень 4: Ценности — во что веришь, как смотришь на мир\nДень 5: Решение — продукт через результат или кейс\nДень 6: Оффер — мягкое закрытие с ограничением\nКаждый день заканчивается вопросом или интригой\n",
-    threads: "\nЦЕПОЧКА ДЛЯ THREADS:\nПост 1 (хук): провокация или неожиданное утверждение\nПосты 2-4: раскрываешь идею по шагам, каждый заканчивается интригой\nПост 5: инсайт или неожиданный поворот\nПост 6 (финал): вывод + мягкий CTA\nКаждый пост до 500 символов, читается отдельно но тянет к следующему\n",
-    plan: "\nКОНТЕНТ-ПЛАН НА МЕСЯЦ:\n30 постов: день / формат / тема / суть в одном предложении\nСоотношение: 40% польза, 30% личное и доверие, 20% продажи, 10% вовлечение\nФорматы чередуй: пост, Reels, сторис, карусель\nТемы ведут по воронке: знакомство — доверие — желание — покупка\n",
-    niche: "\nАНАЛИЗ НИШИ:\nПортрет аудитории — кто, что тревожит, о чём мечтают\nТоп-10 вирусных тем с объяснением почему зайдут\nБоли и страхи — явные и глубокие\nКонтент-план на 2 недели — тема, формат, суть\n5 идей для Reels с хуком\nПозиционирование — как выделиться среди конкурентов\n",
-    bio: "\nШАПКА ПРОФИЛЯ INSTAGRAM:\nСтрого до 150 символов включая эмодзи\nНикаких заголовков — только живой текст\nДай 3 варианта пронумерованных\nВ каждом: кто ты + что даёшь + призыв к действию\nТолько конкретика\n",
-    strategy: "\nСТРАТЕГИЯ БЛОГА:\nДиагностика точки А — где человек сейчас\nТочка Б — что хочет через 3-6 месяцев\nФундамент — позиционирование, голос, отличие\nКонтент-система на 30 дней\n5 первых шагов с гарантированным результатом\nТоп-3 ошибки которые тормозят рост\nМетрики победы через 30/60/90 дней\n",
+    post:
+      "\nТЫ ПИШЕШЬ: пост для соцсетей\n" +
+      "Адаптируй под платформу: Instagram — короче, больше воздуха, хук визуальный, до 150 слов. Telegram — глубже, экспертнее, можно до 300 слов. VK — средний формат, живой язык.\n" +
+      "СТРУКТУРА (без меток в тексте):\n" +
+      "1. Первые 1-2 строки останавливают скролл — вопрос, провокация, боль или неожиданный факт\n" +
+      "2. Личная ситуация или узнаваемая проблема читателя\n" +
+      "3. Неожиданный поворот или инсайт — то чего не ожидали\n" +
+      "4. Конкретный совет или шаг который можно применить сейчас\n" +
+      "5. Мягкий вопрос к аудитории без давления\n",
+
+    carousel:
+      "\nТЫ — топ-1 копирайтер русскоязычного Instagram создающий вирусные карусели.\n\n" +
+      "ШАГ 1 — если пользователь не выбрал идею:\n" +
+      "Предложи 10 идей каруселей. Для каждой:\n" +
+      "— Заголовок до 40 символов (провокационный или бьющий в боль)\n" +
+      "— Суть: 3-5 тезисов о чём слайды\n" +
+      "— Главный триггер: почему сохранят или поспорят\n" +
+      "— Механика: узнавание / провокация / это про меня / разрушение мифа\n\n" +
+      "ШАГ 2 — если пользователь выбрал идею:\n" +
+      "Напиши карусель 8-10 слайдов:\n" +
+      "Слайд 1: хук — боль или провокация, останавливает скролл\n" +
+      "Слайды 2-7: каждый — один мини-инсайт, ощущение это про меня\n" +
+      "Предпоследний: разворот — новая перспектива или решение\n" +
+      "Последний: мягкий CTA со словом ПУЛЬС\n" +
+      "Каждый слайд: заголовок до 40 символов + текст 1-3 предложения до 160 символов\n" +
+      "Запрещено: уникальный, эффективный, качественный. Цифры внутри текста\n",
+
+    threads:
+      "\nТЫ ПИШЕШЬ: пост в стиле живого момента для Threads / Instagram\n" +
+      "МЕХАНИКА (без меток в тексте):\n" +
+      "1. Начало — эмоция без фильтра. Первые 1-2 строки — живой восторг или удивление прямо сейчас. Можно капслок. Можно незаконченную мысль.\n" +
+      "Тон: АШАЛЕТЬ, я в шоке, только что и это работает, кто-то ещё так делает\n" +
+      "2. Середина — конкретика без рекламы. Что именно произошло с цифрами прямо в тексте. Показывай процесс изнутри.\n" +
+      "3. Один инсайт — одна мысль почему это работает. Одно-два коротких предложения.\n" +
+      "4. Финал — мягкий вопрос. Не купи, не переходи. Просто: кому надо, узнала себя, хочешь попробовать.\n" +
+      "ТРЕБОВАНИЯ: короткие строки, много воздуха, абзац 1-3 строки, разговорный язык, 100-180 слов\n" +
+      "ЗАПРЕЩЕНО: уникальный, эффективный, качественный, восклицательные знаки в середине\n",
+
+    reels:
+      "\nТЫ ПИШЕШЬ: сценарий для Reels\n" +
+      "Адаптируй хук и язык под целевую аудиторию — говори на их языке, используй их боли.\n" +
+      "СТРУКТУРА СЦЕНАРИЯ (пиши как режиссёрский сценарий — что говорить, что показывать, текст на экране):\n" +
+      "0-3 сек: визуальный или текстовый хук — провокация, боль или обещание. Останавливает палец.\n" +
+      "3-10 сек: раскрываешь боль или проблему\n" +
+      "10-25 сек: решение в 3 шага или одна сильная идея\n" +
+      "25-30 сек: чёткий CTA — что сделать прямо сейчас\n",
+
+    promo:
+      "\nТЫ ПИШЕШЬ: серию прогрева на 6 дней для сторис\n" +
+      "ВАЖНО: каждый день = одна отдельная сторис. До 100 слов. Разговорный язык. Каждая заканчивается вопросом или интригой на следующий день.\n" +
+      "Пиши каждый день как отдельный текст, разделяй их чётко.\n" +
+      "День 1: кто ты — через личную историю, без перечисления регалий\n" +
+      "День 2: понимаешь боль аудитории изнутри — говоришь о проблеме их словами\n" +
+      "День 3: личная история провала или сомнения — строит настоящее доверие\n" +
+      "День 4: ценности — во что веришь, как смотришь на мир и профессию\n" +
+      "День 5: решение — показываешь продукт через результат клиента или свой кейс\n" +
+      "День 6: мягкое закрытие с ограничением — без давления и FOMO\n",
+
+    sales:
+      "\nТЫ ПИШЕШЬ: продающий текст / оффер\n" +
+      "Пиши сплошным живым текстом без заголовков и меток блоков.\n" +
+      "Внутри текста последовательно: опиши точный портрет человека в его ситуации → назови острую боль своими словами → скажи что конкретно получит → объясни как это работает → скажи когда будет результат → предложи следующий шаг без давления.\n" +
+      "Русская логика покупки: боль → доверие → действие. Никакого FOMO.\n",
+
+    plan:
+      "\nТЫ СОСТАВЛЯЕШЬ: контент-план на месяц\n" +
+      "Учти цель месяца при составлении плана — все темы и форматы должны вести к этой цели.\n" +
+      "30 постов: день / формат / тема / суть в одном предложении\n" +
+      "Соотношение: 40% польза, 30% личное и доверие, 20% продажи, 10% вовлечение\n" +
+      "Форматы чередуй: пост, Reels, сторис, карусель\n" +
+      "Темы ведут по воронке под цель: знакомство — доверие — желание — действие\n",
+
+    niche:
+      "\nТЫ ПРОВОДИШЬ: глубокий анализ ниши\n" +
+      "СТРУКТУРА (без контент-плана — только аналитика):\n" +
+      "Портрет аудитории — кто эти люди, возраст, ситуация, что тревожит, о чём мечтают\n" +
+      "Топ-10 вирусных тем для постов — с объяснением почему зайдут\n" +
+      "Боли и страхи — явные (о чём говорят) и глубокие (о чём молчат)\n" +
+      "Топ-5 форматов которые работают в этой нише — с объяснением почему\n" +
+      "Позиционирование — как выделиться, какую позицию занять чтобы не быть одним из многих\n" +
+      "Главные ошибки экспертов в этой нише — честно и конкретно\n",
+
+    bio:
+      "\nТЫ ПИШЕШЬ: шапку профиля\n" +
+      "Адаптируй под платформу:\n" +
+      "Instagram — строго до 150 символов включая эмодзи. 3 варианта пронумерованных.\n" +
+      "Telegram — до 70 символов для имени, до 200 для описания. 3 варианта.\n" +
+      "В каждом варианте: кто ты + что даёшь + призыв к действию\n" +
+      "Никаких общих слов — только конкретика\n",
+
+    strategy:
+      "\nТЫ РАЗРАБАТЫВАЕШЬ: стратегию блога\n" +
+      "Диагностика точки А — где человек сейчас: ниша, аудитория, что есть, что мешает\n" +
+      "Точка Б — что хочет получить от блога через 3-6 месяцев: клиенты, охваты, статус\n" +
+      "Фундамент — позиционирование, ниша внутри ниши, голос, отличие от других\n" +
+      "Контент-система на 30 дней — что и как часто публиковать\n" +
+      "5 первых шагов с гарантированным результатом — конкретно, с цифрами\n" +
+      "Топ-3 ошибки которые тормозят рост в этой нише\n" +
+      "Метрики победы через 30/60/90 дней\n",
   };
 
   return base + (map[typeId] || "") +
@@ -98,6 +190,14 @@ export default function App() {
   const [type, setType] = useState(null);
   const [style, setStyle] = useState("");
   const [topic, setTopic] = useState("");
+  const [platform, setPlatform] = useState("Instagram");
+  const [audience, setAudience] = useState("");
+  const [brandVoice, setBrandVoice] = useState("");
+  const [monthGoal, setMonthGoal] = useState("");
+  const [product, setProduct] = useState("");
+  const [fact, setFact] = useState("");
+  const [carouselIdea, setCarouselIdea] = useState("");
+  const [carouselStep, setCarouselStep] = useState(1);
   const [length, setLength] = useState(LENGTHS[0]);
   const [extra, setExtra] = useState("");
   const [result, setResult] = useState("");
@@ -111,24 +211,31 @@ export default function App() {
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [copiedIdx, setCopiedIdx] = useState(null);
 
+  const isThreads = type?.id === "threads";
+  const isCarousel = type?.id === "carousel";
+  const isPost = type?.id === "post";
+  const isReels = type?.id === "reels";
+  const isPlan = type?.id === "plan";
+  const isBio = type?.id === "bio";
+
   const submitCode = () => {
     const res = checkCode(codeInput);
     if (res.valid) {
-      setAccessType(res.type);
-      setUserCode(codeInput.trim().toUpperCase());
-      setUsageCount(0);
-      setScreen("main");
-      setCodeError("");
-    } else {
-      setCodeError("Неверный код. Попробуй ещё раз.");
-    }
+      setAccessType(res.type); setUserCode(codeInput.trim().toUpperCase());
+      setUsageCount(0); setScreen("main"); setCodeError("");
+    } else { setCodeError("Неверный код. Попробуй ещё раз."); }
+  };
+
+  const pickType = (t) => {
+    setType(t); setStyle(t.styles[0]);
+    setProduct(""); setFact(""); setCarouselIdea(""); setCarouselStep(1);
+    setAudience(""); setMonthGoal(""); setPlatform("Instagram");
   };
 
   const saveToHistory = async (entry) => {
     try {
       await fetch("/api/history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "save", code: userCode, entry })
       });
     } catch (e) {}
@@ -138,8 +245,7 @@ export default function App() {
     setHistoryLoading(true);
     try {
       const res = await fetch("/api/history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "load", code: userCode })
       });
       const data = await res.json();
@@ -148,41 +254,50 @@ export default function App() {
     setHistoryLoading(false);
   };
 
-  const pickType = (t) => { setType(t); setStyle(t.styles[0]); };
+  const buildUserPrompt = () => {
+    const lenMap = ["короткий текст до 100 слов", "текст 100–250 слов", "длинный текст 250+ слов"];
+    const voiceNote = brandVoice.trim() ? "\nГолос и стиль бренда (примеры текстов): " + brandVoice : "";
 
-  const generate = async () => {
+    if (isCarousel) {
+      if (carouselStep === 1)
+        return "ШАГ 1. Предложи 10 идей каруселей.\nНиша: " + topic + "\nПродукт или идея: " + product + "\nГлавная боль: " + fact + voiceNote + (extra ? "\n" + extra : "");
+      return "ШАГ 2. Напиши карусель.\nНиша: " + topic + "\nПродукт: " + product + "\nБоль: " + fact + "\nВыбранная идея: " + carouselIdea + voiceNote;
+    }
+    if (isThreads)
+      return "Напиши пост в стиле живого момента для Threads.\nНиша: " + topic + "\nПродукт или результат: " + product + "\nЦифра или факт: " + fact + voiceNote + (extra ? "\n" + extra : "");
+    if (isPost)
+      return "Напиши пост для " + platform + " на тему: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + "." + voiceNote + (extra ? "\n" + extra : "");
+    if (isReels)
+      return "Напиши сценарий Reels на тему: " + topic + ".\nЦелевая аудитория: " + audience + voiceNote + (extra ? "\n" + extra : "");
+    if (isPlan)
+      return "Составь контент-план на месяц для ниши: " + topic + ".\nЦель месяца: " + monthGoal + voiceNote + (extra ? "\n" + extra : "");
+    if (isBio)
+      return "Напиши шапку профиля для " + platform + ".\nО ком: " + topic + voiceNote + (extra ? "\n" + extra : "");
+    if (type?.id === "niche") return "Проведи анализ ниши: " + topic + "." + voiceNote + (extra ? "\n" + extra : "");
+    if (type?.id === "strategy") return "Разработай стратегию блога для: " + topic + "." + voiceNote + (extra ? "\n" + extra : "");
+    if (type?.id === "promo") return "Напиши серию прогрева на 6 дней для: " + topic + "." + voiceNote + (extra ? "\n" + extra : "");
+    if (type?.id === "sales") return "Напиши продающий текст для: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + "." + voiceNote + (extra ? "\n" + extra : "");
+    return "Напиши " + type.label + " на тему: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + "." + voiceNote + (extra ? "\n" + extra : "");
+  };
+
+  const generate = async (overrideStep) => {
     if (!type || !topic.trim()) return;
     if (accessType === "trial" && usageCount >= TRIAL_LIMIT) { setScreen("upgrade"); return; }
     setLoading(true); setScreen("result"); setResult(""); setChat([]);
-    const lenMap = ["короткий текст до 100 слов", "текст 100–250 слов", "длинный текст 250+ слов"];
-    let q = "";
-    if (type.id === "niche") q = "Проведи полный анализ ниши: " + topic + "." + (extra ? "\n" + extra : "");
-    else if (type.id === "strategy") q = "Разработай стратегию блога для: " + topic + "." + (extra ? "\n" + extra : "");
-    else if (type.id === "plan") q = "Составь контент-план на месяц для ниши: " + topic + "." + (extra ? "\n" + extra : "");
-    else if (type.id === "promo") q = "Напиши серию прогрева на 6 дней для: " + topic + "." + (extra ? "\n" + extra : "");
-    else if (type.id === "threads") q = "Напиши цепочку из 6 постов для Threads на тему: " + topic + "." + (extra ? "\n" + extra : "");
-    else q = "Напиши " + type.label + " на тему: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + ".\n" + (extra || "");
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
+          model: "claude-sonnet-4-20250514", max_tokens: 1500,
           system: buildPrompt(type.id, style),
-          messages: [{ role: "user", content: q }]
+          messages: [{ role: "user", content: buildUserPrompt() }]
         })
       });
       const data = await res.json();
       const text = clean(data.content?.map(b => b.text || "").join("") || "Ошибка генерации.");
-      setResult(text);
-      setUsageCount(c => c + 1);
-      await saveToHistory({
-        type: type.label,
-        topic,
-        text,
-        date: new Date().toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })
-      });
+      setResult(text); setUsageCount(c => c + 1);
+      if (isCarousel && carouselStep === 1) setCarouselStep(2);
+      await saveToHistory({ type: type.label, topic, text, date: new Date().toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }) });
     } catch (e) { setResult("__error__"); }
     setLoading(false);
   };
@@ -193,18 +308,12 @@ export default function App() {
     const hist = [...chat, { role: "user", content: msg }];
     setChat(hist); setChatLoading(true);
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
+          model: "claude-sonnet-4-20250514", max_tokens: 1500,
           system: buildPrompt(type.id, style),
-          messages: [
-            { role: "user", content: "Ты уже написал:\n\n" + result },
-            { role: "assistant", content: result },
-            ...hist
-          ]
+          messages: [{ role: "user", content: "Ты уже написал:\n\n" + result }, { role: "assistant", content: result }, ...hist]
         })
       });
       const data = await res.json();
@@ -214,8 +323,14 @@ export default function App() {
   };
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  const copyHistoryItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
-  const reset = () => { setType(null); setStyle(""); setTopic(""); setExtra(""); setResult(""); setChat([]); setFollowUp(""); setScreen("main"); };
+  const copyItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
+  const reset = () => { setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra(""); setBrandVoice(""); setAudience(""); setMonthGoal(""); setCarouselIdea(""); setCarouselStep(1); setResult(""); setChat([]); setFollowUp(""); setScreen("main"); };
+
+  const canGenerate = type && topic.trim() &&
+    (!(isThreads || isCarousel) || (product.trim() && fact.trim())) &&
+    (!isReels || audience.trim()) &&
+    (!isPlan || monthGoal.trim()) &&
+    (!isCarousel || carouselStep === 1 || carouselIdea.trim());
 
   const s = {
     wrap: { minHeight:"100vh", background:"linear-gradient(135deg,#f5f0ff 0%,#fdf2f8 100%)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Segoe UI',sans-serif", padding:16 },
@@ -231,13 +346,11 @@ export default function App() {
     box: { background:"#f9fafb", border:"1.5px solid #e5e7eb", borderRadius:14, padding:18, fontSize:14, lineHeight:1.8, color:"#1f2937", whiteSpace:"pre-wrap", minHeight:140 },
     chip: { display:"inline-block", background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600, marginBottom:14 },
     badge: { display:"inline-flex", alignItems:"center", gap:6, background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#15803d", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600 },
+    platBtn: (active) => ({ padding:"7px 16px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500, border: active ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: active ? "#ede9fe" : "#f9fafb", color: active ? "#6d28d9" : "#374151", transition:"all .15s" }),
   };
 
-  const tLabel = ["niche","plan"].includes(type?.id) ? "Ниша / тема бизнеса *" : type?.id === "strategy" ? "Ниша / тема блога *" : "Тема / о чём *";
-  const tPlaceholder = ["niche","plan"].includes(type?.id) ? "Например: нутрициология, психология…" : type?.id === "strategy" ? "Например: блог психолога, коуч по деньгам…" : "Например: курс по инвестициям для мам…";
-  const btnLabel = type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : type?.id === "plan" ? "📅 Составить план" : "✨ Написать текст";
-  const titleText = loading ? "Генерируем..." : type?.id === "niche" ? "Анализ готов" : type?.id === "strategy" ? "Стратегия готова" : type?.id === "plan" ? "Контент-план готов" : "Твой текст готов";
-  const subText = type?.id === "niche" ? "Стратегический разбор ниши 🔍" : type?.id === "strategy" ? "Персональная стратегия блога 📈" : type?.id === "plan" ? "Контент-план на месяц 📅" : "Написано с пониманием русского менталитета 🧠";
+  const titleText = loading ? "Генерируем..." : type?.id === "niche" ? "Анализ готов" : type?.id === "strategy" ? "Стратегия готова" : type?.id === "plan" ? "Контент-план готов" : isCarousel && carouselStep === 2 ? "Карусель готова" : "Твой текст готов";
+  const subText = type?.id === "niche" ? "Глубокий анализ ниши 🔍" : type?.id === "strategy" ? "Персональная стратегия блога 📈" : type?.id === "plan" ? "Контент-план на месяц 📅" : "Написано с пониманием русского менталитета 🧠";
 
   // ДОСТУП
   if (screen === "access") return (
@@ -249,15 +362,11 @@ export default function App() {
       </div>
       <label style={s.lbl}>Код доступа</label>
       <input style={s.inp} placeholder="Введи код доступа…" value={codeInput}
-        onChange={e => setCodeInput(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && submitCode()} />
+        onChange={e => setCodeInput(e.target.value)} onKeyDown={e => e.key === "Enter" && submitCode()} />
       {codeError && <div style={{ color:"#ef4444", fontSize:13, marginTop:6 }}>{codeError}</div>}
       <button style={s.btn} onClick={submitCode}>Войти →</button>
       <div style={{ textAlign:"center", marginTop:16, fontSize:13, color:"#9ca3af" }}>
-        Нет кода?{" "}
-        <span style={{ color:"#7c3aed", fontWeight:600, cursor:"pointer" }} onClick={() => setScreen("upgrade")}>
-          Получить доступ
-        </span>
+        Нет кода? <span style={{ color:"#7c3aed", fontWeight:600, cursor:"pointer" }} onClick={() => setScreen("upgrade")}>Получить доступ</span>
       </div>
     </div></div>
   );
@@ -273,15 +382,14 @@ export default function App() {
       <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", borderRadius:16, padding:24, marginBottom:20 }}>
         <div style={{ fontSize:32, fontWeight:700, color:"#7c3aed", textAlign:"center", marginBottom:4 }}>1 290 ₽</div>
         <div style={{ textAlign:"center", color:"#6b7280", fontSize:13, marginBottom:16 }}>Полный доступ на 3 месяца</div>
-        {["Безлимитные генерации", "Все 9 форматов контента", "История последних 20 текстов", "Маркетолог с опытом 20+ лет"].map(f => (
+        {["Безлимитные генерации", "Все 10 форматов контента", "Голос бренда и адаптация под платформу", "История последних 20 текстов", "Маркетолог с опытом 20+ лет"].map(f => (
           <div key={f} style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, color:"#374151", marginBottom:6 }}>
             <span style={{ color:"#7c3aed" }}>✓</span> {f}
           </div>
         ))}
       </div>
       <div style={{ background:"#f9fafb", borderRadius:12, padding:16, fontSize:13, color:"#374151", lineHeight:1.7, marginBottom:16 }}>
-        Напиши в Telegram: <strong>@твой_ник</strong><br />
-        После оплаты пришлю код в течение 15 минут
+        Напиши в Telegram: <strong>@твой_ник</strong><br />После оплаты пришлю код в течение 15 минут
       </div>
       <button style={s.btn}>Написать в Telegram</button>
       {accessType && <button style={s.btnS} onClick={() => setScreen("main")}>← Вернуться</button>}
@@ -296,18 +404,15 @@ export default function App() {
         <div style={s.title}>📂 История</div>
         <button style={{ ...s.btnS, width:"auto", padding:"6px 14px", marginTop:0 }} onClick={() => setScreen("main")}>← Назад</button>
       </div>
-
       <div style={{ background:"#fff7ed", border:"1px solid #fed7aa", borderRadius:12, padding:"12px 16px", fontSize:13, color:"#92400e", marginBottom:20, lineHeight:1.6 }}>
-        💡 Сохраняются последние <strong>20 текстов</strong>. Если хочешь сохранить важный текст навсегда — скопируй его в заметки.
+        💡 Сохраняются последние <strong>20 текстов</strong>. Важное — скопируй в заметки.
       </div>
-
       {historyLoading ? (
         <div style={{ textAlign:"center", padding:32, color:"#9ca3af" }}>Загружаем историю…</div>
       ) : history.length === 0 ? (
         <div style={{ textAlign:"center", padding:32, color:"#9ca3af" }}>
           <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
           <div>История пока пуста</div>
-          <div style={{ fontSize:12, marginTop:4 }}>Сгенерируй первый текст!</div>
         </div>
       ) : (
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -324,8 +429,7 @@ export default function App() {
               {expandedIdx === i && (
                 <div style={{ padding:"14px 16px", borderTop:"1px solid #e5e7eb" }}>
                   <div style={{ fontSize:13, lineHeight:1.8, color:"#1f2937", whiteSpace:"pre-wrap", marginBottom:12 }}>{item.text}</div>
-                  <button style={{ ...s.btn, marginTop:0, fontSize:13, padding:"9px" }}
-                    onClick={() => copyHistoryItem(item.text, i)}>
+                  <button style={{ ...s.btn, marginTop:0, fontSize:13, padding:"9px" }} onClick={() => copyItem(item.text, i)}>
                     {copiedIdx === i ? "✅ Скопировано!" : "📋 Скопировать"}
                   </button>
                 </div>
@@ -343,17 +447,14 @@ export default function App() {
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
         <div style={s.badge}>✦ AI Pulse PRO</div>
         <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          {accessType === "trial" && (
-            <div style={{ fontSize:12, color:"#9ca3af" }}>{usageCount}/{TRIAL_LIMIT}</div>
-          )}
+          {accessType === "trial" && <div style={{ fontSize:12, color:"#9ca3af" }}>{usageCount}/{TRIAL_LIMIT}</div>}
           <button style={{ background:"#f3f4f6", border:"none", borderRadius:10, padding:"6px 12px", fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
-            onClick={() => { loadHistory(); setScreen("history"); }}>
-            📂 История
-          </button>
+            onClick={() => { loadHistory(); setScreen("history"); }}>📂 История</button>
         </div>
       </div>
       <div style={s.title}>Создать текст</div>
       <div style={s.sub}>Выбери формат — напишу с душой и пониманием аудитории</div>
+
       <label style={s.lbl}>Формат</label>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:18 }}>
         {TEXT_TYPES.map(t => (
@@ -367,6 +468,7 @@ export default function App() {
           </div>
         ))}
       </div>
+
       {type && (
         <div style={{ marginBottom:16 }}>
           <label style={s.lbl}>Стиль подачи</label>
@@ -382,8 +484,56 @@ export default function App() {
           </div>
         </div>
       )}
-      <label style={s.lbl}>{tLabel}</label>
-      <input style={s.inp} placeholder={tPlaceholder} value={topic} onChange={e => setTopic(e.target.value)} />
+
+      {(isPost || isBio) && (
+        <div style={{ marginBottom:14 }}>
+          <label style={s.lbl}>Платформа</label>
+          <div style={{ display:"flex", gap:8 }}>
+            {(isBio ? ["Instagram", "Telegram"] : ["Instagram", "Telegram", "VK"]).map(p => (
+              <div key={p} style={s.platBtn(platform === p)} onClick={() => setPlatform(p)}>{p}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <label style={s.lbl}>{isThreads || isCarousel ? "Ниша *" : "Тема / о чём *"}</label>
+      <input style={s.inp}
+        placeholder={isThreads || isCarousel ? "Например: психолог, нутрициолог, коуч…" : "Например: курс по инвестициям для мам…"}
+        value={topic} onChange={e => setTopic(e.target.value)} />
+
+      {(isThreads || isCarousel) && (
+        <>
+          <div style={{ marginTop:14 }}>
+            <label style={s.lbl}>{isCarousel ? "Продукт или идея карусели *" : "Продукт или результат *"}</label>
+            <input style={s.inp}
+              placeholder={isCarousel ? "Например: карусель которая греет к покупке курса" : "Например: пост который привёл заявку"}
+              value={product} onChange={e => setProduct(e.target.value)} />
+          </div>
+          <div style={{ marginTop:14 }}>
+            <label style={s.lbl}>{isCarousel ? "Главная боль аудитории *" : "Цифра или факт *"}</label>
+            <input style={s.inp}
+              placeholder={isCarousel ? "Например: знают что надо копить — но всё равно не делают" : "Например: написала за 7 минут, пришла заявка через 2 дня"}
+              value={fact} onChange={e => setFact(e.target.value)} />
+          </div>
+        </>
+      )}
+
+      {isReels && (
+        <div style={{ marginTop:14 }}>
+          <label style={s.lbl}>Целевая аудитория *</label>
+          <input style={s.inp} placeholder="Например: мамы в декрете 25-35 лет, эксперты-психологи…"
+            value={audience} onChange={e => setAudience(e.target.value)} />
+        </div>
+      )}
+
+      {isPlan && (
+        <div style={{ marginTop:14 }}>
+          <label style={s.lbl}>Цель на месяц *</label>
+          <input style={s.inp} placeholder="Например: продажи курса / рост аудитории / прогрев к консультации"
+            value={monthGoal} onChange={e => setMonthGoal(e.target.value)} />
+        </div>
+      )}
+
       {!NO_LEN.includes(type?.id) && (
         <div style={{ marginTop:14 }}>
           <label style={s.lbl}>Длина</label>
@@ -392,13 +542,23 @@ export default function App() {
           </select>
         </div>
       )}
+
       <div style={{ marginTop:14 }}>
-        <label style={s.lbl}>Контекст (необязательно)</label>
-        <textarea style={s.ta} placeholder="ЦА, боли, УТП, ключевые смыслы…" value={extra} onChange={e => setExtra(e.target.value)} />
+        <label style={s.lbl}>Голос бренда (необязательно)</label>
+        <textarea style={{ ...s.ta, minHeight:52 }}
+          placeholder="Вставь 2-3 примера своих текстов — AI подстроится под твой стиль…"
+          value={brandVoice} onChange={e => setBrandVoice(e.target.value)} />
       </div>
-      <button style={{ ...s.btn, marginTop:20, opacity:(!type || !topic.trim()) ? 0.5 : 1 }}
-        onClick={generate} disabled={!type || !topic.trim()}>
-        {btnLabel}
+
+      <div style={{ marginTop:10 }}>
+        <label style={s.lbl}>Контекст (необязательно)</label>
+        <textarea style={{ ...s.ta, minHeight:52 }} placeholder="ЦА, боли, УТП, ключевые смыслы…"
+          value={extra} onChange={e => setExtra(e.target.value)} />
+      </div>
+
+      <button style={{ ...s.btn, marginTop:20, opacity: canGenerate ? 1 : 0.5 }}
+        onClick={() => generate()} disabled={!canGenerate}>
+        {type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : isPlan ? "📅 Составить план" : isCarousel ? "🎠 Получить идеи" : "✨ Написать текст"}
       </button>
     </div></div>
   );
@@ -420,6 +580,17 @@ export default function App() {
         <>
           <div style={{ ...s.box, fontSize:NO_LEN.includes(type?.id) ? 13 : 14 }}>{result}</div>
           <button style={s.btn} onClick={copy}>{copied ? "✅ Скопировано!" : "📋 Скопировать"}</button>
+          {isCarousel && carouselStep === 2 && (
+            <div style={{ marginTop:14 }}>
+              <label style={s.lbl}>Выбери идею для карусели</label>
+              <textarea style={{ ...s.ta, minHeight:52 }} placeholder="Напиши номер или название идеи которая понравилась…"
+                value={carouselIdea} onChange={e => setCarouselIdea(e.target.value)} />
+              <button style={{ ...s.btn, opacity: carouselIdea.trim() ? 1 : 0.5 }}
+                disabled={!carouselIdea.trim()} onClick={() => { setCarouselStep(3); generate(); }}>
+                🎠 Написать карусель по идее
+              </button>
+            </div>
+          )}
         </>
       )}
       {!loading && result && result !== "__error__" && (
