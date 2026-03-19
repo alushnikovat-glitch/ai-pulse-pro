@@ -77,8 +77,14 @@
         <table>
           <thead>
             <tr>
-              <th>Имя</th><th>Email</th><th>Telegram</th>
-              <th>Дата регистрации</th><th>Генераций</th><th>Статус</th><th>Оплата</th>
+              <th>Имя</th>
+              <th>Email</th>
+              <th>Telegram</th>
+              <th>Дата регистрации</th>
+              <th>Генераций</th>
+              <th>Статус</th>
+              <th>Дата оплаты</th>
+              <th>Действие</th>
             </tr>
           </thead>
           <tbody id="users-body"></tbody>
@@ -152,6 +158,21 @@
     } catch(e) {}
   }
 
+  async function setPaid(targetUserId) {
+    if (!confirm("Сделать пользователя платным на 90 дней?")) return;
+    try {
+      const data = await api({ action: "adminSetPaid", targetUserId });
+      if (data.ok) {
+        alert("✅ Готово! Пользователь получил полный доступ на 90 дней.");
+        refresh();
+      } else {
+        alert("Ошибка: " + (data.error || "неизвестная"));
+      }
+    } catch(e) {
+      alert("Ошибка соединения");
+    }
+  }
+
   function renderAll() {
     const paid = allUsers.filter(u => u.type === "paid").length;
     const trial = allUsers.filter(u => u.type === "trial").length;
@@ -173,7 +194,7 @@
     );
     const tbody = document.getElementById("users-body");
     tbody.innerHTML = filtered.length === 0
-      ? '<tr><td colspan="7" style="text-align:center;padding:32px;color:#6b7280">Нет данных</td></tr>'
+      ? '<tr><td colspan="8" style="text-align:center;padding:32px;color:#6b7280">Нет данных</td></tr>'
       : filtered.map((u, i) => `
         <tr style="background:${i%2===0?'transparent':'rgba(255,255,255,.02)'}">
           <td><strong>${u.name||"—"}</strong></td>
@@ -183,9 +204,10 @@
           <td style="text-align:center;font-weight:700;color:#60a5fa">${u.usageCount||0}</td>
           <td><span class="${u.type==='paid'?'badge-paid':'badge-trial'}">${u.type==='paid'?'✅ Платный':'⏳ Триал'}</span></td>
           <td style="color:#4ade80;font-size:12px">${u.paidAt||"—"}</td>
-<td>
-  ${u.type !== 'paid' ? `<button onclick="setPaid('${u.id}')" style="padding:4px 12px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">✅ Сделать платным</button>` : '<span style="color:#4ade80;font-size:12px">✓ платный</span>'}
-</td>
+          <td>${u.type !== 'paid'
+            ? `<button onclick="setPaid('${u.id}')" style="padding:4px 12px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">✅ Сделать платным</button>`
+            : '<span style="color:#4ade80;font-size:12px">✓ активен</span>'
+          }</td>
         </tr>`).join("");
     document.getElementById("users-count").textContent = `Показано: ${filtered.length} из ${allUsers.length}`;
   }
