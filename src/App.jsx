@@ -18,8 +18,25 @@ const TEXT_TYPES = [
   { id: "strategy", label: "📈 Стратегия блога",          desc: "С чего начать и как расти",         styles: ["Пошаговый план", "Через точку А в точку Б", "Быстрый старт с результатом"] },
 ];
 
-const LENGTHS = ["Короткий (до 100 слов)", "Средний (100–250 слов)", "Длинный (250+ слов)"];
 const NO_LEN = ["niche", "strategy", "bio", "plan", "promo", "threads", "carousel"];
+
+const POST_LIMITS = {
+  Instagram: { label: "до 2 200 символов", max: 2200 },
+  Telegram:  { label: "до 4 096 символов", max: 4096 },
+  VK:        { label: "до 4 000 символов", max: 4000 },
+};
+
+const REELS_LENGTHS = [
+  { id: "short",  label: "Короткий (15–30 сек)" },
+  { id: "medium", label: "Средний (30–60 сек)" },
+  { id: "long",   label: "Длинный (60–90 сек)" },
+];
+
+const SALES_LENGTHS = [
+  { id: "short",  label: "Короткий (~500 символов)" },
+  { id: "medium", label: "Средний (~1 500 символов)" },
+  { id: "long",   label: "Длинный (~3 000 символов)" },
+];
 
 const MOTS = [
   "Уже думаю над смыслами… 🧠",
@@ -32,7 +49,24 @@ const MOTS = [
   "Последний штрих — и всё! 🎯",
 ];
 
-function buildPrompt(typeId, style) {
+const GENDERS = [
+  { id: "female", label: "От женщины" },
+  { id: "male",   label: "От мужчины" },
+];
+
+const GENDER_TYPES = ["post", "promo", "sales", "threads", "reels", "bio", "strategy", "niche", "plan", "carousel"];
+
+function genderInstruction(genderId) {
+  if (genderId === "female") {
+    return "\n\nПОЛ АВТОРА: Текст пишется от лица женщины. Используй женский род в глаголах и причастиях (решила, поняла, начала, была). Стиль — тёплый, чувственный, с личными деталями. Местоимения: я/мне/меня — женские формы.";
+  }
+  if (genderId === "male") {
+    return "\n\nПОЛ АВТОРА: Текст пишется от лица мужчины. Используй мужской род (решил, понял, начал, был). Стиль — уверенный, прямой, конкретный. Местоимения: я/мне/меня — мужские формы.";
+  }
+  return "";
+}
+
+function buildPrompt(typeId, style, genderId) {
   const base =
     "Ты — AI Pulse PRO. Маркетолог с опытом 20+ лет и глубоким пониманием русского менталитета.\n\n" +
     "Ты знаешь:\n" +
@@ -47,18 +81,19 @@ function buildPrompt(typeId, style) {
     "- Никаких клише: уникальный, комплексный подход — в мусор\n" +
     "- Короткие и длинные фразы вперемешку. Паузы. Многоточия\n" +
     "- Пиши как человек который понимает проблему изнутри\n" +
-    "- ВАЖНО: никогда не пиши названия блоков — КОМУ, БОЛЬ, РЕЗУЛЬТАТ, МЕТОД, СРОКИ, ХУК, CTA, ДЕНЬ 1. Только живой текст.\n";
+    "- ВАЖНО: никогда не пиши названия блоков — КОМУ, БОЛЬ, РЕЗУЛЬТАТ, МЕТОД, СРОКИ, ХУК, CTA, ДЕНЬ 1. Только живой текст.\n" +
+    genderInstruction(genderId);
 
   const map = {
-    post: "\nТЫ ПИШЕШЬ: пост для соцсетей\nInstagram — до 150 слов, воздух. Telegram — до 300 слов, экспертнее. VK — средний.\nСТРУКТУРА: хук → история/боль → инсайт → совет → мягкий вопрос\n",
+    post: "\nТЫ ПИШЕШЬ: пост для соцсетей\nInstagram — строго до 2 200 символов. Telegram — до 4 096 символов. VK — до 4 096 символов.\nСТРУКТУРА: хук → история/боль → инсайт → совет → мягкий вопрос\n",
     carousel: "\nТЫ — топ копирайтер вирусных каруселей Instagram.\nШАГ 1: предложи 10 идей (заголовок до 40 символов, суть, триггер, механика).\nШАГ 2: карусель 8-10 слайдов. Слайд 1: хук. Слайды 2-7: инсайты. Предпоследний: разворот. Последний: CTA со словом ПУЛЬС.\nКаждый слайд: заголовок до 40 символов + 1-3 предложения до 160 символов.\n",
-    threads: "\nТЫ ПИШЕШЬ: пост живого момента для Threads/Instagram\n1. Эмоция без фильтра — восторг, удивление, можно капслок\n2. Конкретика с цифрами прямо в тексте\n3. Один инсайт почему это работает\n4. Мягкий вопрос в конце\n100-180 слов. Короткие строки. Много воздуха.\n",
+    threads: "\nТЫ ПИШЕШЬ: пост живого момента для Threads/Instagram\n1. Эмоция без фильтра — восторг, удивление, можно капслок\n2. Конкретика с цифрами прямо в тексте\n3. Один инсайт почему это работает\n4. Мягкий вопрос в конце\nДо 500 символов. Короткие строки. Много воздуха.\n",
     reels: "\nТЫ ПИШЕШЬ: сценарий Reels\n0-3 сек: хук под целевую аудиторию\n3-10 сек: боль\n10-25 сек: решение в 3 шага\n25-30 сек: CTA\nПиши как сценарий: что говорить, что показывать, текст на экране\n",
     promo: "\nСЕРИЯ ПРОГРЕВА 6 ДНЕЙ. Каждый день = отдельная сторис до 100 слов, заканчивается вопросом.\nД1: кто ты через историю. Д2: боль изнутри. Д3: личный провал. Д4: ценности. Д5: результат/кейс. Д6: мягкое закрытие.\n",
     sales: "\nПРОДАЮЩИЙ ТЕКСТ — сплошным живым текстом без заголовков.\nПортрет → боль своими словами → что получит → как работает → когда результат → следующий шаг.\nРусская логика: боль → доверие → действие.\n",
     plan: "\nКОНТЕНТ-ПЛАН 30 дней: день / формат / тема / суть.\n40% польза, 30% личное, 20% продажи, 10% вовлечение.\nФорматы: пост, Reels, сторис, карусель. Учти цель месяца.\n",
     niche: "\nАНАЛИЗ НИШИ:\nПортрет аудитории. Топ-10 вирусных тем. Боли явные и глубокие. Топ-5 форматов. Позиционирование. Главные ошибки экспертов.\n",
-    bio: "\nШАПКА ПРОФИЛЯ. 3 варианта.\nInstagram: до 150 символов. Telegram: до 200 символов.\nВ каждом: кто + что даёшь + CTA. Только конкретика.\n",
+    bio: "\nШАПКА ПРОФИЛЯ. 3 варианта.\nInstagram: строго до 150 символов. Telegram: до 255 символов.\nВ каждом: кто + что даёшь + CTA. Только конкретика.\n",
     strategy: "\nСТРАТЕГИЯ БЛОГА:\nТочка А → точка Б → фундамент → контент-система 30 дней → 5 первых шагов → топ-3 ошибки → метрики 30/60/90 дней.\n",
   };
 
@@ -102,11 +137,9 @@ export default function App() {
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
 
-  const [codeInput, setCodeInput] = useState("");
-  const [codeError, setCodeError] = useState("");
-
   const [type, setType] = useState(null);
   const [style, setStyle] = useState("");
+  const [gender, setGender] = useState("female");
   const [topic, setTopic] = useState("");
   const [platform, setPlatform] = useState("Instagram");
   const [audience, setAudience] = useState("");
@@ -116,7 +149,8 @@ export default function App() {
   const [fact, setFact] = useState("");
   const [carouselIdea, setCarouselIdea] = useState("");
   const [carouselStep, setCarouselStep] = useState(1);
-  const [length, setLength] = useState(LENGTHS[0]);
+  const [reelsLength, setReelsLength] = useState("short");
+  const [salesLength, setSalesLength] = useState("medium");
   const [extra, setExtra] = useState("");
 
   const [result, setResult] = useState("");
@@ -137,6 +171,8 @@ export default function App() {
   const isReels = type?.id === "reels";
   const isPlan = type?.id === "plan";
   const isBio = type?.id === "bio";
+  const isSales = type?.id === "sales";
+  const showGender = GENDER_TYPES.includes(type?.id);
 
   const api = async (body) => {
     const r = await fetch("/api/history", {
@@ -179,26 +215,41 @@ export default function App() {
     setLoginLoading(false);
   };
 
-  const pickType = (t) => { setType(t); setStyle(t.styles[0]); setProduct(""); setFact(""); setCarouselIdea(""); setCarouselStep(1); setAudience(""); setMonthGoal(""); setPlatform("Instagram"); };
+  const pickType = (t) => {
+    setType(t); setStyle(t.styles[0]);
+    setProduct(""); setFact(""); setCarouselIdea(""); setCarouselStep(1);
+    setAudience(""); setMonthGoal(""); setPlatform("Instagram");
+    setReelsLength("short"); setSalesLength("medium");
+  };
 
   const buildUserPrompt = () => {
-    const lenMap = ["короткий текст до 100 слов", "текст 100–250 слов", "длинный текст 250+ слов"];
+    const genderNote = gender === "female" ? " (автор — женщина)" : " (автор — мужчина)";
     const voice = brandVoice.trim() ? "\nГолос бренда: " + brandVoice : "";
     const ctx = extra.trim() ? "\nКонтекст: " + extra : "";
+
     if (isCarousel) {
-      if (carouselStep === 1) return "ШАГ 1. 10 идей каруселей.\nНиша: " + topic + "\nПродукт: " + product + "\nБоль: " + fact + voice + ctx;
-      return "ШАГ 2. Напиши карусель.\nНиша: " + topic + "\nПродукт: " + product + "\nБоль: " + fact + "\nИдея: " + carouselIdea + voice;
+      if (carouselStep === 1) return "ШАГ 1. 10 идей каруселей" + genderNote + ".\nНиша: " + topic + "\nПродукт: " + product + "\nБоль: " + fact + voice + ctx;
+      return "ШАГ 2. Напиши карусель" + genderNote + ".\nНиша: " + topic + "\nПродукт: " + product + "\nБоль: " + fact + "\nИдея: " + carouselIdea + voice;
     }
-    if (isThreads) return "Живой момент.\nНиша: " + topic + "\nПродукт: " + product + "\nФакт: " + fact + voice + ctx;
-    if (isPost) return "Пост для " + platform + ": " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + voice + ctx;
-    if (isReels) return "Reels: " + topic + ".\nЦА: " + audience + voice + ctx;
-    if (isPlan) return "Контент-план: " + topic + ".\nЦель: " + monthGoal + voice + ctx;
-    if (isBio) return "Шапка для " + platform + ": " + topic + voice + ctx;
-    if (type?.id === "niche") return "Анализ ниши: " + topic + voice + ctx;
-    if (type?.id === "strategy") return "Стратегия блога: " + topic + voice + ctx;
-    if (type?.id === "promo") return "Прогрев на 6 дней: " + topic + voice + ctx;
-    if (type?.id === "sales") return "Продающий текст: " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + voice + ctx;
-    return type.label + ": " + topic + ".\nДлина: " + lenMap[LENGTHS.indexOf(length)] + voice + ctx;
+    if (isThreads) return "Живой момент" + genderNote + ".\nНиша: " + topic + "\nПродукт: " + product + "\nФакт: " + fact + voice + ctx;
+    if (isPost) {
+      const lim = POST_LIMITS[platform] || POST_LIMITS.Instagram;
+      return "Пост для " + platform + genderNote + ": " + topic + ".\nДлина: " + lim.label + voice + ctx;
+    }
+    if (isReels) {
+      const rLen = REELS_LENGTHS.find(l => l.id === reelsLength)?.label || "";
+      return "Reels" + genderNote + ": " + topic + ".\nДлина сценария: " + rLen + "\nЦА: " + audience + voice + ctx;
+    }
+    if (isPlan) return "Контент-план" + genderNote + ": " + topic + ".\nЦель: " + monthGoal + voice + ctx;
+    if (isBio) return "Шапка для " + platform + genderNote + ": " + topic + voice + ctx;
+    if (isSales) {
+      const sLen = SALES_LENGTHS.find(l => l.id === salesLength)?.label || "";
+      return "Продающий текст" + genderNote + ": " + topic + ".\nДлина: " + sLen + voice + ctx;
+    }
+    if (type?.id === "niche") return "Анализ ниши" + genderNote + ": " + topic + voice + ctx;
+    if (type?.id === "strategy") return "Стратегия блога" + genderNote + ": " + topic + voice + ctx;
+    if (type?.id === "promo") return "Прогрев на 6 дней" + genderNote + ": " + topic + voice + ctx;
+    return type.label + genderNote + ": " + topic + voice + ctx;
   };
 
   const generate = async () => {
@@ -209,17 +260,28 @@ export default function App() {
     try {
       const r = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1500, system: buildPrompt(type.id, style), messages: [{ role: "user", content: buildUserPrompt() }] })
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1500,
+          system: buildPrompt(type.id, style, gender),
+          messages: [{ role: "user", content: buildUserPrompt() }]
+        })
       });
       const data = await r.json();
       const text = clean(data.content?.map(b => b.text || "").join("") || "Ошибка генерации.");
       setResult(text);
-      const newCount = usageCount + 1;
-      setUsageCount(newCount);
+      setUsageCount(usageCount + 1);
       if (isCarousel && carouselStep === 1) setCarouselStep(2);
       if (userId) {
         await api({ action: "increment", userId });
-        await api({ action: "save", userId, entry: { type: type.label, topic, text, date: new Date().toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }) } });
+        await api({
+          action: "save", userId,
+          entry: {
+            type: type.label, topic, text, gender,
+            date: new Date().toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })
+          }
+        });
+        await api({ action: "adminSave", entry: { type: type.label, topic, gender, date: new Date().toISOString(), userId } });
       }
       if (accessType === "guest") setAccessType("guest_used");
     } catch (e) { setResult("__error__"); }
@@ -234,7 +296,11 @@ export default function App() {
     try {
       const r = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1500, system: buildPrompt(type.id, style), messages: [{ role: "user", content: "Ты уже написал:\n\n" + result }, { role: "assistant", content: result }, ...hist] })
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 1500,
+          system: buildPrompt(type.id, style, gender),
+          messages: [{ role: "user", content: "Ты уже написал:\n\n" + result }, { role: "assistant", content: result }, ...hist]
+        })
       });
       const data = await r.json();
       setChat([...hist, { role: "assistant", content: clean(data.content?.map(b => b.text || "").join("") || "Ошибка.") }]);
@@ -254,7 +320,11 @@ export default function App() {
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const copyItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
-  const reset = () => { setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra(""); setBrandVoice(""); setAudience(""); setMonthGoal(""); setCarouselIdea(""); setCarouselStep(1); setResult(""); setChat([]); setFollowUp(""); setScreen("main"); };
+  const reset = () => {
+    setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra("");
+    setBrandVoice(""); setAudience(""); setMonthGoal(""); setCarouselIdea(""); setCarouselStep(1);
+    setResult(""); setChat([]); setFollowUp(""); setScreen("main");
+  };
   const logout = () => { setAccessType("guest"); setUserId(null); setUserName(""); setUsageCount(0); setDaysLeft(null); };
 
   const canGenerate = type && topic.trim() &&
@@ -276,10 +346,16 @@ export default function App() {
     box: { background:"#f9fafb", border:"1.5px solid #e5e7eb", borderRadius:14, padding:18, fontSize:14, lineHeight:1.8, color:"#1f2937", whiteSpace:"pre-wrap", minHeight:140 },
     chip: { display:"inline-block", background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600, marginBottom:14 },
     badge: { display:"inline-flex", alignItems:"center", gap:6, background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#15803d", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600 },
+    togBtn: (active) => ({
+      padding:"8px 18px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:600,
+      border: active ? "2px solid #7c3aed" : "2px solid #e5e7eb",
+      background: active ? "#ede9fe" : "#f9fafb",
+      color: active ? "#6d28d9" : "#374151",
+      transition: "all .15s"
+    }),
     platBtn: (a) => ({ padding:"7px 16px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500, border: a ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: a ? "#ede9fe" : "#f9fafb", color: a ? "#6d28d9" : "#374151" }),
   };
 
-  // ВХОД ПО EMAIL
   if (screen === "login") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -298,7 +374,6 @@ export default function App() {
     </div></div>
   );
 
-  // РЕГИСТРАЦИЯ
   if (screen === "register") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -325,7 +400,6 @@ export default function App() {
     </div></div>
   );
 
-  // ПОКУПКА
   if (screen === "upgrade") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -342,12 +416,7 @@ export default function App() {
           </div>
         ))}
       </div>
-
-      <button style={s.btn} onClick={() => window.open(PAYMENT_URL, "_blank")}>
-        💳 Оплатить 1 290 ₽
-      </button>
-
-      {/* Уже оплатил */}
+      <button style={s.btn} onClick={() => window.open(PAYMENT_URL, "_blank")}>💳 Оплатить 1 290 ₽</button>
       <div style={{ marginTop:16, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"14px 16px" }}>
         <div style={{ fontSize:13, fontWeight:600, color:"#15803d", marginBottom:8 }}>✅ Уже оплатил?</div>
         <div style={{ fontSize:12, color:"#374151", marginBottom:10, lineHeight:1.5 }}>
@@ -365,16 +434,13 @@ export default function App() {
         </div>
         {loginError && <div style={{ color:"#ef4444", fontSize:12, marginTop:6 }}>{loginError}</div>}
       </div>
-
       <div style={{ marginTop:12, textAlign:"center", fontSize:12, color:"#9ca3af" }}>
         Вопросы? <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ color:"#7c3aed", fontWeight:600 }}>Написать в поддержку</a>
       </div>
-
       {(accessType === "trial" || accessType === "guest_used") && <button style={s.btnS} onClick={() => setScreen("main")}>← Вернуться</button>}
     </div></div>
   );
 
-  // ИСТОРИЯ
   if (screen === "history") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
@@ -397,7 +463,12 @@ export default function App() {
             onClick={() => setExpandedIdx(expandedIdx === i ? null : i)}>
             <div>
               <div style={{ fontWeight:600, fontSize:13, color:"#1a1a2e" }}>{item.type}</div>
-              <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>{item.topic} · {item.date}</div>
+              <div style={{ fontSize:12, color:"#6b7280", marginTop:2 }}>
+                {item.topic} · {item.date}
+                {item.gender && <span style={{ marginLeft:6, background:"#ede9fe", color:"#6d28d9", borderRadius:10, padding:"1px 8px", fontSize:11 }}>
+                  {item.gender === "female" ? "♀ женщина" : "♂ мужчина"}
+                </span>}
+              </div>
             </div>
             <div style={{ fontSize:18, color:"#9ca3af" }}>{expandedIdx === i ? "▲" : "▼"}</div>
           </div>
@@ -414,7 +485,6 @@ export default function App() {
     </div></div>
   );
 
-  // ГЛАВНАЯ
   if (screen === "main") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
@@ -429,7 +499,6 @@ export default function App() {
       </div>
 
       {userName && <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>Привет, {userName} 👋</div>}
-
       <div style={s.title}>Создать текст</div>
       <div style={s.sub}>Выбери формат — напишу с душой и пониманием аудитории</div>
 
@@ -448,19 +517,34 @@ export default function App() {
       </div>
 
       {type && (
-        <div style={{ marginBottom:16 }}>
-          <label style={s.lbl}>Стиль подачи</label>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-            {type.styles.map(st => (
-              <div key={st} onClick={() => setStyle(st)} style={{
-                padding:"7px 14px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500,
-                border: style === st ? "2px solid #7c3aed" : "2px solid #e5e7eb",
-                background: style === st ? "#ede9fe" : "#f9fafb",
-                color: style === st ? "#6d28d9" : "#374151"
-              }}>{st}</div>
-            ))}
+        <>
+          <div style={{ marginBottom:16 }}>
+            <label style={s.lbl}>Стиль подачи</label>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {type.styles.map(st => (
+                <div key={st} onClick={() => setStyle(st)} style={{
+                  padding:"7px 14px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500,
+                  border: style === st ? "2px solid #7c3aed" : "2px solid #e5e7eb",
+                  background: style === st ? "#ede9fe" : "#f9fafb",
+                  color: style === st ? "#6d28d9" : "#374151"
+                }}>{st}</div>
+              ))}
+            </div>
           </div>
-        </div>
+
+          {showGender && (
+            <div style={{ marginBottom:16 }}>
+              <label style={s.lbl}>От чьего лица пишем</label>
+              <div style={{ display:"flex", gap:8 }}>
+                {GENDERS.map(g => (
+                  <button key={g.id} onClick={() => setGender(g.id)} style={s.togBtn(gender === g.id)}>
+                    {g.id === "female" ? "♀ " : "♂ "}{g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {(isPost || isBio) && (
@@ -468,7 +552,10 @@ export default function App() {
           <label style={s.lbl}>Платформа</label>
           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
             {(isBio ? ["Instagram","Telegram"] : ["Instagram","Telegram","VK"]).map(p => (
-              <div key={p} style={s.platBtn(platform === p)} onClick={() => setPlatform(p)}>{p}</div>
+              <div key={p} style={s.platBtn(platform === p)} onClick={() => setPlatform(p)}>
+                {p}
+                {isPost && <span style={{ fontSize:10, color:"#9ca3af", marginLeft:4 }}>{POST_LIMITS[p]?.label}</span>}
+              </div>
             ))}
           </div>
         </div>
@@ -493,9 +580,30 @@ export default function App() {
       )}
 
       {isReels && (
+        <>
+          <div style={{ marginTop:14 }}>
+            <label style={s.lbl}>Целевая аудитория *</label>
+            <input style={s.inp} placeholder="Мамы в декрете 25-35 лет…" value={audience} onChange={e => setAudience(e.target.value)} />
+          </div>
+          <div style={{ marginTop:14 }}>
+            <label style={s.lbl}>Длина сценария</label>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {REELS_LENGTHS.map(l => (
+                <div key={l.id} style={s.platBtn(reelsLength === l.id)} onClick={() => setReelsLength(l.id)}>{l.label}</div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {isSales && (
         <div style={{ marginTop:14 }}>
-          <label style={s.lbl}>Целевая аудитория *</label>
-          <input style={s.inp} placeholder="Мамы в декрете 25-35 лет…" value={audience} onChange={e => setAudience(e.target.value)} />
+          <label style={s.lbl}>Длина текста</label>
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            {SALES_LENGTHS.map(l => (
+              <div key={l.id} style={s.platBtn(salesLength === l.id)} onClick={() => setSalesLength(l.id)}>{l.label}</div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -503,15 +611,6 @@ export default function App() {
         <div style={{ marginTop:14 }}>
           <label style={s.lbl}>Цель на месяц *</label>
           <input style={s.inp} placeholder="Продажи курса / рост аудитории / прогрев" value={monthGoal} onChange={e => setMonthGoal(e.target.value)} />
-        </div>
-      )}
-
-      {!NO_LEN.includes(type?.id) && (
-        <div style={{ marginTop:14 }}>
-          <label style={s.lbl}>Длина</label>
-          <select style={s.sel} value={length} onChange={e => setLength(e.target.value)}>
-            {LENGTHS.map(l => <option key={l}>{l}</option>)}
-          </select>
         </div>
       )}
 
@@ -528,7 +627,6 @@ export default function App() {
         {type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : isPlan ? "📅 Составить план" : isCarousel ? "🎠 Получить идеи" : "✨ Написать текст"}
       </button>
 
-      {/* ФУТЕР */}
       <div style={{ marginTop:28, borderTop:"1px solid #f3f4f6", paddingTop:20 }}>
         {accessType === "guest" && (
           <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:12, padding:"12px 16px", marginBottom:16, fontSize:13, color:"#92400e", lineHeight:1.6 }}>
@@ -574,10 +672,9 @@ export default function App() {
     </div></div>
   );
 
-  // РЕЗУЛЬТАТ
   if (screen === "result") return (
     <div style={s.wrap}><div style={s.card}>
-      <div style={s.chip}>{type?.label} · {style}</div>
+      <div style={s.chip}>{type?.label} · {style} · {gender === "female" ? "♀" : "♂"}</div>
       <div style={s.title}>{loading ? "Генерируем..." : "Твой текст готов"}</div>
       <div style={s.sub}>Написано с пониманием русского менталитета 🧠</div>
 
