@@ -156,5 +156,38 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── ВХОД ПО EMAIL ────────────────────────────────────────────────
+  if (action === "loginByEmail") {
+    if (!email) return res.status(400).json({ error: "missing email" });
+    const emailKey = "email:" + email.toLowerCase().trim();
+    let uid = null;
+    try {
+      const r = await kv(url, token, ["get", emailKey]);
+      if (r.result) uid = r.result;
+    } catch (e) {}
+
+    if (!uid) return res.status(200).json({ ok: false, reason: "not_found" });
+
+    const user = await (async () => {
+      try {
+        const r = await kv(url, token, ["get", "user:" + uid]);
+        if (r.result) return JSON.parse(r.result);
+      } catch (e) {}
+      return null;
+    })();
+
+    if (!user) return res.status(200).json({ ok: false, reason: "not_found" });
+
+    const now = Date.now();
+    if (user.type === "paid") {
+      const daysUsed = (now - user.paidAt) / (1000 * 60 * 60 * 24);
+      if (daysUsed > PAID_DAYS) return res.status(200).json({ ok: false, reason: "expired" });
+      const daysLeft = Math.max(0, PAID_DAYS - Math.floor(daysUsed));
+      return res.status(200).json({ ok: true, userId: uid, type: "paid", name: user.name || "", usageCount: user.usageCount || 0, daysLeft });
+    }
+
+    return res.status(200).json({ ok: true, userId: uid, type: "trial", name: user.name || "", usageCount: user.usageCount || 0 });
+  }
+
   return res.status(400).json({ error: "unknown action" });
 }
