@@ -103,4 +103,193 @@
       <div id="users-count" class="count-info"></div>
     </div>
 
-    <div id="tab
+    <div id="tab-texts" style="display:none">
+      <div id="texts-count" class="count-info" style="margin-bottom:14px"></div>
+      <div id="texts-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let pwd = "";
+  let allUsers = [];
+  let allTexts = [];
+
+  document.getElementById("pwd-input").addEventListener("keydown", e => {
+    if (e.key === "Enter") doLogin();
+  });
+
+  async function api(body) {
+    const r = await fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, password: pwd })
+    });
+    return r.json();
+  }
+
+  async function doLogin() {
+    pwd = document.getElementById("pwd-input").value;
+    const btn = document.querySelector("#login-screen button");
+    btn.textContent = "Проверяем…";
+    btn.disabled = true;
+    try {
+      const data = await api({ action: "adminGetUsers" });
+      if (data.error === "forbidden") {
+        document.getElementById("auth-error").textContent = "Неверный пароль";
+        document.getElementById("auth-error").style.display = "block";
+        btn.textContent = "Войти →";
+        btn.disabled = false;
+        return;
+      }
+      allUsers = data.users || [];
+      const td = await api({ action: "adminGetTexts" });
+      allTexts = td.items || [];
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("admin-screen").style.display = "block";
+      renderAll();
+    } catch(e) {
+      document.getElementById("auth-error").textContent = "Ошибка соединения";
+      document.getElementById("auth-error").style.display = "block";
+      btn.textContent = "Войти →";
+      btn.disabled = false;
+    }
+  }
+
+  async function refresh() {
+    try {
+      const [ud, td] = await Promise.all([
+        api({ action: "adminGetUsers" }),
+        api({ action: "adminGetTexts" })
+      ]);
+      allUsers = ud.users || [];
+      allTexts = td.items || [];
+      renderAll();
+    } catch(e) {}
+  }
+
+  async function setPaid(targetUserId) {
+    if (!confirm("Сделать пользователя платным на 90 дней?")) return;
+    try {
+      const data = await api({ action: "adminSetPaid", targetUserId });
+      if (data.ok) { alert("✅ Готово! Пользователь получил полный доступ на 90 дней."); refresh(); }
+      else alert("Ошибка: " + (data.error || "неизвестная"));
+    } catch(e) { alert("Ошибка соединения"); }
+  }
+
+  async function setTrial(targetUserId) {
+    if (!confirm("Отменить платный доступ? Счётчик генераций сбросится до 0.")) return;
+    try {
+      const data = await api({ action: "adminSetTrial", targetUserId });
+      if (data.ok) { alert("✅ Доступ отменён, пользователь переведён в триал."); refresh(); }
+      else alert("Ошибка: " + (data.error || "неизвестная"));
+    } catch(e) { alert("Ошибка соединения"); }
+  }
+
+  async function extendAccess(targetUserId) {
+    if (!confirm("Продлить доступ на +90 дней?")) return;
+    try {
+      const data = await api({ action: "adminExtend", targetUserId });
+      if (data.ok) { alert("✅ Доступ продлён на 90 дней!"); refresh(); }
+      else alert("Ошибка: " + (data.error || "неизвестная"));
+    } catch(e) { alert("Ошибка соединения"); }
+  }
+
+  function exportCSV() {
+    if (allUsers.length === 0) { alert("Нет данных для экспорта"); return; }
+    const headers = ["Имя", "Email", "Telegram", "Дата регистрации", "Генераций", "Статус", "Дата оплаты"];
+    const rows = allUsers.map(u => [
+      u.name || "",
+      u.email || "",
+      u.telegram || "",
+      u.registeredAt || "",
+      u.usageCount || 0,
+      u.type === "paid" ? "Платный" : "Триал",
+      u.paidAt || ""
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ai-pulse-users.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function renderAll() {
+    const paid = allUsers.filter(u => u.type === "paid").length;
+    const trial = allUsers.filter(u => u.type === "trial").length;
+    const gen = allUsers.reduce((s, u) => s + (u.usageCount || 0), 0);
+    document.getElementById("s-total").textContent = allUsers.length;
+    document.getElementById("s-paid").textContent = paid;
+    document.getElementById("s-trial").textContent = trial;
+    document.getElementById("s-gen").textContent = gen;
+    renderUsers();
+    renderTexts();
+  }
+
+  function renderUsers() {
+    const q = document.getElementById("search-input").value.toLowerCase();
+    const filtered = allUsers.filter(u =>
+      !q || (u.name||"").toLowerCase().includes(q) ||
+      (u.email||"").toLowerCase().includes(q) ||
+      (u.telegram||"").toLowerCase().includes(q)
+    );
+    const tbody = document.getElementById("users-body");
+    tbody.innerHTML = filtered.length === 0
+      ? '<tr><td colspan="9" style="text-align:center;padding:32px;color:#6b7280">Нет данных</td></tr>'
+      : filtered.map((u, i) => `
+        <tr style="background:${i%2===0?'transparent':'rgba(255,255,255,.02)'}">
+          <td><strong>${u.name||"—"}</strong></td>
+          <td style="color:#a78bfa">${u.email||"—"}</td>
+          <td style="color:#6b7280">${u.telegram||"—"}</td>
+          <td style="color:#6b7280;white-space:nowrap">${u.registeredAt||"—"}</td>
+          <td style="text-align:center;font-weight:700;color:#60a5fa">${u.usageCount||0}</td>
+          <td><span class="${u.type==='paid'?'badge-paid':'badge-trial'}">${u.type==='paid'?'✅ Платный':'⏳ Триал'}</span></td>
+          <td style="text-align:center;color:${u.daysLeft !== null && u.daysLeft <= 10 ? '#f87171' : '#4ade80'};font-weight:600">
+            ${u.type==='paid' ? (u.daysLeft !== null ? u.daysLeft + ' дн.' : '—') : '—'}
+          </td>
+          <td style="color:#6b7280;font-size:12px;white-space:nowrap">${u.paidAt||"—"}</td>
+          <td>
+            <div class="actions">
+              ${u.type !== 'paid'
+                ? `<button class="btn-sm btn-green" onclick="setPaid('${u.id}')">✅ Платный</button>`
+                : `<button class="btn-sm btn-blue" onclick="extendAccess('${u.id}')">+90 дней</button>
+                   <button class="btn-sm btn-red" onclick="setTrial('${u.id}')">❌ Отменить</button>`
+              }
+            </div>
+          </td>
+        </tr>`).join("");
+    document.getElementById("users-count").textContent = `Показано: ${filtered.length} из ${allUsers.length}`;
+  }
+
+  function renderTexts() {
+    const list = document.getElementById("texts-list");
+    document.getElementById("texts-count").innerHTML =
+      `📝 Записей за последние 48 часов: <strong style="color:#a78bfa">${allTexts.length}</strong>
+       <span style="margin-left:12px;color:#44403c">Старше 2 дней удаляются автоматически</span>`;
+    list.innerHTML = allTexts.length === 0
+      ? '<div style="text-align:center;padding:40px;color:#6b7280"><div style="font-size:36px;margin-bottom:12px">📭</div><div>Нет генераций за последние 2 дня</div></div>'
+      : allTexts.map(item => `
+        <div class="text-item">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div>
+              <span style="font-weight:600;color:#a78bfa;font-size:13px">${item.type||"—"}</span>
+              ${item.gender ? `<span style="margin-left:8px;font-size:11px;color:#6b7280">${item.gender==='female'?'♀ женщина':'♂ мужчина'}</span>` : ""}
+            </div>
+            <span style="font-size:11px;color:#44403c">${item.date ? new Date(item.date).toLocaleString("ru-RU") : "—"}</span>
+          </div>
+          <div style="font-size:13px;color:#e2d9f3">
+            <span style="color:#6b7280">Тема: </span>${item.topic||"—"}
+          </div>
+          ${item.userId ? `<div style="font-size:11px;color:#44403c;margin-top:4px">ID: ${item.userId}</div>` : ""}
+        </div>`).join("");
+  }
+
+  function switchTab(idx) {
+    document.querySelectorAll(".tab").forEach((t, i) => t.classList.toggle("active", i === idx));
+    document.getElementById("tab-users").style.display = idx === 0 ? "block" : "none";
+    document.getElementById("tab-texts").style.display = idx === 1 ? "block" : "none";
+  }
+</script>
+</body>
+</html>
