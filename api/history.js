@@ -1,6 +1,3 @@
-Вот полный `api/history.js`:
-
-```js
 const PAID_DAYS = 90;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "pulse_admin_2026";
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
@@ -308,4 +305,3 @@ export default async function handler(req, res) {
 
   return res.status(400).json({ error: "unknown action" });
 }
-```
