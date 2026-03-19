@@ -320,10 +320,12 @@ export default function App() {
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const copyItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
-  const reset = () => {
+const reset = () => {
     setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra("");
     setBrandVoice(""); setAudience(""); setMonthGoal(""); setCarouselIdea(""); setCarouselStep(1);
-    setResult(""); setChat([]); setFollowUp(""); setScreen("main");
+    setResult(""); setChat([]); setFollowUp("");
+    if (userId) setScreen("main");
+    else setScreen("register");
   };
   const logout = () => { setAccessType("guest"); setUserId(null); setUserName(""); setUsageCount(0); setDaysLeft(null); };
 
