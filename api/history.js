@@ -238,4 +238,68 @@ export default async function handler(req, res) {
       await kv(url, token, ["set", "user:" + targetUserId, JSON.stringify(user)]);
       return res.status(200).json({ ok: true });
     } catch (e) {
-      return res.status(5
+      return res.status(500).json({ error: "failed" });
+    }
+  }
+
+  // АДМИН: СПИСОК ПОЛЬЗОВАТЕЛЕЙ
+  if (action === "adminGetUsers") {
+    if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+    try {
+      const r = await kv(url, token, ["lrange", "all_users", "0", "499"]);
+      const ids = (r.result || []).filter(Boolean).map(item => {
+        try {
+          const parsed = JSON.parse(item);
+          return parsed.id || parsed;
+        } catch {
+          return item;
+        }
+      });
+      const users = [];
+      for (const id of ids) {
+        try {
+          const ur = await kv(url, token, ["get", "user:" + id]);
+          if (ur.result) {
+            const u = JSON.parse(ur.result);
+            const now = Date.now();
+            let daysLeft = null;
+            if (u.type === "paid" && u.paidAt) {
+              const daysUsed = (now - u.paidAt) / (1000 * 60 * 60 * 24);
+              daysLeft = Math.max(0, Math.round(PAID_DAYS - daysUsed));
+            }
+            users.push({
+              id: u.id, name: u.name, email: u.email,
+              telegram: u.telegram || "",
+              registeredAt: u.registeredAtFormatted || new Date(u.registeredAt || 0).toLocaleString("ru-RU"),
+              usageCount: u.usageCount || 0,
+              type: u.type || "trial",
+              paidAt: u.paidAt ? new Date(u.paidAt).toLocaleString("ru-RU") : null,
+              daysLeft,
+            });
+          }
+        } catch (e) {}
+      }
+      users.sort((a, b) => (b.id > a.id ? 1 : -1));
+      return res.status(200).json({ ok: true, users });
+    } catch (e) {
+      return res.status(500).json({ error: "failed" });
+    }
+  }
+
+  // АДМИН: ТЕКСТЫ ЗА 2 ДНЯ
+  if (action === "adminGetTexts") {
+    if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+    try {
+      const r = await kv(url, token, ["lrange", "admin_texts", "0", "199"]);
+      const now = Date.now();
+      const items = (r.result || []).map(i => {
+        try { return JSON.parse(i); } catch { return null; }
+      }).filter(Boolean).filter(item => item.savedAt && (now - item.savedAt) < TWO_DAYS_MS);
+      return res.status(200).json({ ok: true, items });
+    } catch (e) {
+      return res.status(500).json({ error: "failed" });
+    }
+  }
+
+  return res.status(400).json({ error: "unknown action" });
+}
