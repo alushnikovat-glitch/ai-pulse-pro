@@ -1,8 +1,9 @@
 import { useState } from "react";
 
-const PAID_CODES  = ["PRO2026", "PRO2027", "КУПИТЬ007"];
+const PAID_DAYS = 90;
 const TRIAL_LIMIT = 5;
-const PAID_DAYS   = 90;
+const TG_SUPPORT = "https://t.me/lavaiai";
+const PAYMENT_URL = "https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95";
 
 const TEXT_TYPES = [
   { id: "post",     label: "📱 Пост",                    desc: "Instagram / Telegram / VK",       styles: ["Живой / Кухонный", "Через личную историю", "Через боль и инсайт"] },
@@ -84,26 +85,26 @@ function Spinner() {
 }
 
 export default function App() {
-  // Сессия
   const [screen, setScreen] = useState("main");
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState("");
-  const [accessType, setAccessType] = useState("guest"); // guest | trial | paid
+  const [accessType, setAccessType] = useState("guest");
   const [usageCount, setUsageCount] = useState(0);
   const [daysLeft, setDaysLeft] = useState(null);
 
-  // Регистрация
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regTelegram, setRegTelegram] = useState("");
   const [regError, setRegError] = useState("");
   const [regLoading, setRegLoading] = useState(false);
 
-  // Активация кода
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState("");
 
-  // Форма
   const [type, setType] = useState(null);
   const [style, setStyle] = useState("");
   const [topic, setTopic] = useState("");
@@ -118,7 +119,6 @@ export default function App() {
   const [length, setLength] = useState(LENGTHS[0]);
   const [extra, setExtra] = useState("");
 
-  // Результат
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -126,7 +126,6 @@ export default function App() {
   const [chat, setChat] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  // История
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedIdx, setExpandedIdx] = useState(null);
@@ -154,22 +153,13 @@ export default function App() {
     try {
       const data = await api({ action: "register", name: regName, email: regEmail, telegram: regTelegram });
       if (data.ok) {
-        setUserId(data.userId);
-        setUserName(regName.trim());
-        setUsageCount(data.usageCount || 1);
-        setAccessType("trial");
-        setScreen("main");
-        setRegError("");
-      } else {
-        setRegError("Ошибка. Попробуй ещё раз.");
-      }
+        setUserId(data.userId); setUserName(regName.trim());
+        setUsageCount(data.usageCount || 1); setAccessType("trial");
+        setScreen("main"); setRegError("");
+      } else { setRegError("Ошибка. Попробуй ещё раз."); }
     } catch (e) { setRegError("Ошибка соединения."); }
     setRegLoading(false);
   };
-
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginError, setLoginError] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
 
   const loginByEmail = async () => {
     if (!loginEmail.trim()) return;
@@ -177,13 +167,9 @@ export default function App() {
     try {
       const data = await api({ action: "loginByEmail", email: loginEmail.trim() });
       if (data.ok) {
-        setUserId(data.userId);
-        setUserName(data.name || "");
-        setUsageCount(data.usageCount || 0);
-        setAccessType(data.type || "trial");
-        setDaysLeft(data.daysLeft ?? null);
-        setScreen("main");
-        setLoginError("");
+        setUserId(data.userId); setUserName(data.name || "");
+        setUsageCount(data.usageCount || 0); setAccessType(data.type || "trial");
+        setDaysLeft(data.daysLeft ?? null); setScreen("main"); setLoginError("");
       } else {
         if (data.reason === "expired") setLoginError("Срок доступа истёк. Напиши нам для продления.");
         else if (data.reason === "not_found") setLoginError("Email не найден. Сначала зарегистрируйся бесплатно.");
@@ -191,22 +177,6 @@ export default function App() {
       }
     } catch (e) { setLoginError("Ошибка соединения."); }
     setLoginLoading(false);
-  };
-
-  const activateCode = async () => {
-    if (!codeInput.trim()) return;
-    try {
-      const data = await api({ action: "activate", code: codeInput, userId });
-      if (data.valid) {
-        setAccessType("paid");
-        setDaysLeft(data.daysLeft);
-        setCodeError("");
-        setScreen("main");
-      } else {
-        if (data.reason === "expired") setCodeError("Срок доступа истёк. Напиши нам для продления.");
-        else setCodeError("Неверный код. Попробуй ещё раз.");
-      }
-    } catch (e) { setCodeError("Ошибка соединения."); }
   };
 
   const pickType = (t) => { setType(t); setStyle(t.styles[0]); setProduct(""); setFact(""); setCarouselIdea(""); setCarouselStep(1); setAudience(""); setMonthGoal(""); setPlatform("Instagram"); };
@@ -233,11 +203,8 @@ export default function App() {
 
   const generate = async () => {
     if (!type || !topic.trim()) return;
-    // Гость — только 1 генерация, потом регистрация
     if (accessType === "guest" && usageCount >= 1) { setScreen("register"); return; }
-    // Триал — 5 генераций
     if (accessType === "trial" && usageCount >= TRIAL_LIMIT) { setScreen("upgrade"); return; }
-
     setLoading(true); setScreen("result"); setResult(""); setChat([]);
     try {
       const r = await fetch("/api/chat", {
@@ -254,7 +221,6 @@ export default function App() {
         await api({ action: "increment", userId });
         await api({ action: "save", userId, entry: { type: type.label, topic, text, date: new Date().toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" }) } });
       }
-      // Гость после 1 генерации — показываем регистрацию после результата
       if (accessType === "guest") setAccessType("guest_used");
     } catch (e) { setResult("__error__"); }
     setLoading(false);
@@ -289,6 +255,7 @@ export default function App() {
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const copyItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
   const reset = () => { setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra(""); setBrandVoice(""); setAudience(""); setMonthGoal(""); setCarouselIdea(""); setCarouselStep(1); setResult(""); setChat([]); setFollowUp(""); setScreen("main"); };
+  const logout = () => { setAccessType("guest"); setUserId(null); setUserName(""); setUsageCount(0); setDaysLeft(null); };
 
   const canGenerate = type && topic.trim() &&
     (!(isThreads || isCarousel) || (product.trim() && fact.trim())) &&
@@ -312,18 +279,17 @@ export default function App() {
     platBtn: (a) => ({ padding:"7px 16px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500, border: a ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: a ? "#ede9fe" : "#f9fafb", color: a ? "#6d28d9" : "#374151" }),
   };
 
-  // ── ВХОД ПО EMAIL (после оплаты) ────────────────────────────────
+  // ВХОД ПО EMAIL
   if (screen === "login") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ textAlign:"center", marginBottom:24 }}>
         <div style={{ fontSize:48, marginBottom:8 }}>👋</div>
-        <div style={s.title}>Вернуться в AI Pulse</div>
-        <div style={s.sub}>Введи email которым регистрировался</div>
+        <div style={s.title}>Войти в AI Pulse PRO</div>
+        <div style={s.sub}>Введи email с которым регистрировался</div>
       </div>
       <label style={s.lbl}>Email</label>
       <input style={s.inp} placeholder="твой@email.com" type="email" value={loginEmail}
-        onChange={e => setLoginEmail(e.target.value)}
-        onKeyDown={e => e.key === "Enter" && loginByEmail()} />
+        onChange={e => setLoginEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && loginByEmail()} />
       {loginError && <div style={{ color:"#ef4444", fontSize:13, marginTop:6 }}>{loginError}</div>}
       <button style={{ ...s.btn, opacity: loginLoading ? 0.7 : 1 }} onClick={loginByEmail} disabled={loginLoading}>
         {loginLoading ? "Проверяем…" : "Войти →"}
@@ -332,7 +298,7 @@ export default function App() {
     </div></div>
   );
 
-  // ── РЕГИСТРАЦИЯ ──────────────────────────────────────────────────
+  // РЕГИСТРАЦИЯ
   if (screen === "register") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -340,10 +306,10 @@ export default function App() {
         <div style={s.title}>Тебе понравилось?</div>
         <div style={s.sub}>Зарегистрируйся бесплатно и получи ещё 4 генерации</div>
       </div>
-      <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", borderRadius:14, padding:"14px 16px", marginBottom:20, fontSize:13, color:"#6d28d9", lineHeight:1.6 }}>
-        ✦ Бесплатно: 1 текст без регистрации<br />
-        ✦ После регистрации: ещё 4 генерации<br />
-        ✦ Полный доступ: безлимит за 1 290 ₽ / 3 мес
+      <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", borderRadius:14, padding:"14px 16px", marginBottom:20, fontSize:13, color:"#6d28d9", lineHeight:1.8 }}>
+        ✦ 1 текст без регистрации<br />
+        ✦ После регистрации: ещё 4 генерации бесплатно<br />
+        ✦ Полный доступ: безлимит за 1 290 ₽ / 3 месяца
       </div>
       <label style={s.lbl}>Имя *</label>
       <input style={{ ...s.inp, marginBottom:12 }} placeholder="Как тебя зовут?" value={regName} onChange={e => setRegName(e.target.value)} />
@@ -359,7 +325,7 @@ export default function App() {
     </div></div>
   );
 
-  // ── ПОКУПКА ──────────────────────────────────────────────────────
+  // ПОКУПКА
   if (screen === "upgrade") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -376,15 +342,12 @@ export default function App() {
           </div>
         ))}
       </div>
-      <div style={{ background:"#f9fafb", borderRadius:12, padding:16, fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:12 }}>
-        Напиши в Telegram: <strong>@твой_ник</strong><br />
-        После оплаты пришлю код в течение 15 минут
-      </div>
-      <button style={s.btn} onClick={() => window.open("https://t.me/твой_ник", "_blank")}>
-        💬 Написать в Telegram
+
+      <button style={s.btn} onClick={() => window.open(PAYMENT_URL, "_blank")}>
+        💳 Оплатить 1 290 ₽
       </button>
 
-      {/* Уже оплатил — войти по email */}
+      {/* Уже оплатил */}
       <div style={{ marginTop:16, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"14px 16px" }}>
         <div style={{ fontSize:13, fontWeight:600, color:"#15803d", marginBottom:8 }}>✅ Уже оплатил?</div>
         <div style={{ fontSize:12, color:"#374151", marginBottom:10, lineHeight:1.5 }}>
@@ -396,32 +359,22 @@ export default function App() {
             onKeyDown={e => e.key === "Enter" && loginByEmail()} />
           <button onClick={loginByEmail} disabled={loginLoading} style={{
             padding:"0 16px", background:"linear-gradient(135deg,#7c3aed,#a855f7)",
-            color:"#fff", border:"none", borderRadius:10, fontWeight:700,
-            cursor:"pointer", fontSize:14, opacity: loginLoading ? 0.7 : 1
+            color:"#fff", border:"none", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:14,
+            opacity: loginLoading ? 0.7 : 1
           }}>→</button>
         </div>
         {loginError && <div style={{ color:"#ef4444", fontSize:12, marginTop:6 }}>{loginError}</div>}
       </div>
 
-      {/* Резервный вариант — код */}
-      <div style={{ marginTop:12, borderTop:"1px solid #f3f4f6", paddingTop:12 }}>
-        <div style={{ fontSize:12, color:"#9ca3af", marginBottom:8, textAlign:"center" }}>или введи код доступа</div>
-        <div style={{ display:"flex", gap:8 }}>
-          <input style={{ ...s.inp, flex:1, fontSize:13 }} placeholder="Код доступа…" value={codeInput}
-            onChange={e => setCodeInput(e.target.value)} onKeyDown={e => e.key === "Enter" && activateCode()} />
-          <button onClick={activateCode} style={{
-            padding:"0 16px", background:"#f3f4f6", color:"#374151",
-            border:"none", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:14
-          }}>→</button>
-        </div>
-        {codeError && <div style={{ color:"#ef4444", fontSize:12, marginTop:6 }}>{codeError}</div>}
+      <div style={{ marginTop:12, textAlign:"center", fontSize:12, color:"#9ca3af" }}>
+        Вопросы? <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ color:"#7c3aed", fontWeight:600 }}>Написать в поддержку</a>
       </div>
 
-      {accessType !== "guest" && <button style={s.btnS} onClick={() => setScreen("main")}>← Вернуться</button>}
+      {(accessType === "trial" || accessType === "guest_used") && <button style={s.btnS} onClick={() => setScreen("main")}>← Вернуться</button>}
     </div></div>
   );
 
-  // ── ИСТОРИЯ ──────────────────────────────────────────────────────
+  // ИСТОРИЯ
   if (screen === "history") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
@@ -461,7 +414,7 @@ export default function App() {
     </div></div>
   );
 
-  // ── ГЛАВНАЯ ──────────────────────────────────────────────────────
+  // ГЛАВНАЯ
   if (screen === "main") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
@@ -522,7 +475,8 @@ export default function App() {
       )}
 
       <label style={s.lbl}>{isThreads || isCarousel ? "Ниша *" : "Тема / о чём *"}</label>
-      <input style={s.inp} placeholder={isThreads || isCarousel ? "Например: психолог, нутрициолог…" : "Например: курс по инвестициям для мам…"}
+      <input style={s.inp}
+        placeholder={isThreads || isCarousel ? "Например: психолог, нутрициолог, коуч…" : "Например: курс по инвестициям для мам…"}
         value={topic} onChange={e => setTopic(e.target.value)} />
 
       {(isThreads || isCarousel) && (
@@ -578,7 +532,7 @@ export default function App() {
       <div style={{ marginTop:28, borderTop:"1px solid #f3f4f6", paddingTop:20 }}>
         {accessType === "guest" && (
           <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:12, padding:"12px 16px", marginBottom:16, fontSize:13, color:"#92400e", lineHeight:1.6 }}>
-            👋 Это твоя бесплатная генерация. После неё — быстрая регистрация для ещё 4 текстов.
+            👋 Это твоя бесплатная генерация. После — быстрая регистрация для ещё 4 текстов.
           </div>
         )}
         {accessType === "trial" && (
@@ -587,7 +541,7 @@ export default function App() {
             <div style={{ background:"#e9d5ff", borderRadius:20, height:6, marginBottom:10 }}>
               <div style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", borderRadius:20, height:6, width:(usageCount/TRIAL_LIMIT*100)+"%" }} />
             </div>
-            <div style={{ fontSize:12, color:"#7c3aed", marginBottom:8 }}>Переходи на полный доступ — безлимит за 1 290 ₽</div>
+            <div style={{ fontSize:12, color:"#7c3aed", marginBottom:8 }}>Переходи на полный доступ — безлимит за 1 290 ₽ на 3 месяца</div>
             <button style={{ ...s.btn, marginTop:0, fontSize:13, padding:"10px" }} onClick={() => setScreen("upgrade")}>
               🚀 Купить полный доступ
             </button>
@@ -603,18 +557,15 @@ export default function App() {
           </div>
         )}
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-          <a href="https://t.me/твой_ник" target="_blank" rel="noreferrer" style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
+          <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
             💬 Поддержка
           </a>
-          {userId && (
+          {accessType === "guest" && (
             <button style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
-              onClick={() => { loadHistory(); setScreen("history"); }}>
-              📂 История
-            </button>
+              onClick={() => setScreen("login")}>🔑 Войти</button>
           )}
-          {accessType !== "guest" && accessType !== "guest_used" && (
-            <button style={{ padding:"9px 12px", background:"#fff", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:12, color:"#9ca3af", cursor:"pointer" }}
-              onClick={() => { setAccessType("guest"); setUserId(null); setUserName(""); setUsageCount(0); setDaysLeft(null); }}>
+          {userId && (
+            <button style={{ padding:"9px 12px", background:"#fff", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:12, color:"#9ca3af", cursor:"pointer" }} onClick={logout}>
               Выйти
             </button>
           )}
@@ -623,7 +574,7 @@ export default function App() {
     </div></div>
   );
 
-  // ── РЕЗУЛЬТАТ ────────────────────────────────────────────────────
+  // РЕЗУЛЬТАТ
   if (screen === "result") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={s.chip}>{type?.label} · {style}</div>
@@ -648,7 +599,6 @@ export default function App() {
                 onClick={() => { setCarouselStep(3); generate(); }}>🎠 Написать карусель</button>
             </div>
           )}
-          {/* После первой гостевой генерации — показываем приглашение */}
           {accessType === "guest_used" && (
             <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", border:"1.5px solid #e9d5ff", borderRadius:14, padding:"16px", marginTop:16 }}>
               <div style={{ fontSize:14, fontWeight:600, color:"#6d28d9", marginBottom:6 }}>Понравилось? 🎉</div>
