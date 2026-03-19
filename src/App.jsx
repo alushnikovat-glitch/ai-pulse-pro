@@ -167,6 +167,32 @@ export default function App() {
     setRegLoading(false);
   };
 
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const loginByEmail = async () => {
+    if (!loginEmail.trim()) return;
+    setLoginLoading(true);
+    try {
+      const data = await api({ action: "loginByEmail", email: loginEmail.trim() });
+      if (data.ok) {
+        setUserId(data.userId);
+        setUserName(data.name || "");
+        setUsageCount(data.usageCount || 0);
+        setAccessType(data.type || "trial");
+        setDaysLeft(data.daysLeft ?? null);
+        setScreen("main");
+        setLoginError("");
+      } else {
+        if (data.reason === "expired") setLoginError("Срок доступа истёк. Напиши нам для продления.");
+        else if (data.reason === "not_found") setLoginError("Email не найден. Сначала зарегистрируйся бесплатно.");
+        else setLoginError("Ошибка. Попробуй ещё раз.");
+      }
+    } catch (e) { setLoginError("Ошибка соединения."); }
+    setLoginLoading(false);
+  };
+
   const activateCode = async () => {
     if (!codeInput.trim()) return;
     try {
@@ -286,6 +312,26 @@ export default function App() {
     platBtn: (a) => ({ padding:"7px 16px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500, border: a ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: a ? "#ede9fe" : "#f9fafb", color: a ? "#6d28d9" : "#374151" }),
   };
 
+  // ── ВХОД ПО EMAIL (после оплаты) ────────────────────────────────
+  if (screen === "login") return (
+    <div style={s.wrap}><div style={s.card}>
+      <div style={{ textAlign:"center", marginBottom:24 }}>
+        <div style={{ fontSize:48, marginBottom:8 }}>👋</div>
+        <div style={s.title}>Вернуться в AI Pulse</div>
+        <div style={s.sub}>Введи email которым регистрировался</div>
+      </div>
+      <label style={s.lbl}>Email</label>
+      <input style={s.inp} placeholder="твой@email.com" type="email" value={loginEmail}
+        onChange={e => setLoginEmail(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && loginByEmail()} />
+      {loginError && <div style={{ color:"#ef4444", fontSize:13, marginTop:6 }}>{loginError}</div>}
+      <button style={{ ...s.btn, opacity: loginLoading ? 0.7 : 1 }} onClick={loginByEmail} disabled={loginLoading}>
+        {loginLoading ? "Проверяем…" : "Войти →"}
+      </button>
+      <button style={s.btnS} onClick={() => setScreen("main")}>← Назад</button>
+    </div></div>
+  );
+
   // ── РЕГИСТРАЦИЯ ──────────────────────────────────────────────────
   if (screen === "register") return (
     <div style={s.wrap}><div style={s.card}>
@@ -319,7 +365,7 @@ export default function App() {
       <div style={{ textAlign:"center", marginBottom:24 }}>
         <div style={{ fontSize:48, marginBottom:8 }}>🚀</div>
         <div style={s.title}>{accessType === "trial" ? "Генерации закончились" : "Полный доступ"}</div>
-        <div style={s.sub}>Безлимит на 3 месяца — 1 раз и навсегда</div>
+        <div style={s.sub}>Безлимит на 3 месяца</div>
       </div>
       <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", borderRadius:16, padding:24, marginBottom:20 }}>
         <div style={{ fontSize:32, fontWeight:700, color:"#7c3aed", textAlign:"center", marginBottom:4 }}>1 290 ₽</div>
@@ -338,17 +384,37 @@ export default function App() {
         💬 Написать в Telegram
       </button>
 
-      {/* Ввод кода */}
-      <div style={{ marginTop:20, borderTop:"1px solid #f3f4f6", paddingTop:16 }}>
-        <label style={s.lbl}>Уже есть код доступа?</label>
-        <div style={{ display:"flex", gap:8 }}>
-          <input style={{ ...s.inp, flex:1 }} placeholder="Введи код…" value={codeInput}
-            onChange={e => setCodeInput(e.target.value)} onKeyDown={e => e.key === "Enter" && activateCode()} />
-          <button onClick={activateCode} style={{ padding:"0 16px", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", border:"none", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:14 }}>
-            →
-          </button>
+      {/* Уже оплатил — войти по email */}
+      <div style={{ marginTop:16, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"14px 16px" }}>
+        <div style={{ fontSize:13, fontWeight:600, color:"#15803d", marginBottom:8 }}>✅ Уже оплатил?</div>
+        <div style={{ fontSize:12, color:"#374151", marginBottom:10, lineHeight:1.5 }}>
+          Введи email с которого оплачивал — доступ откроется автоматически
         </div>
-        {codeError && <div style={{ color:"#ef4444", fontSize:13, marginTop:6 }}>{codeError}</div>}
+        <div style={{ display:"flex", gap:8 }}>
+          <input style={{ ...s.inp, flex:1, fontSize:13 }} placeholder="твой@email.com" type="email"
+            value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && loginByEmail()} />
+          <button onClick={loginByEmail} disabled={loginLoading} style={{
+            padding:"0 16px", background:"linear-gradient(135deg,#7c3aed,#a855f7)",
+            color:"#fff", border:"none", borderRadius:10, fontWeight:700,
+            cursor:"pointer", fontSize:14, opacity: loginLoading ? 0.7 : 1
+          }}>→</button>
+        </div>
+        {loginError && <div style={{ color:"#ef4444", fontSize:12, marginTop:6 }}>{loginError}</div>}
+      </div>
+
+      {/* Резервный вариант — код */}
+      <div style={{ marginTop:12, borderTop:"1px solid #f3f4f6", paddingTop:12 }}>
+        <div style={{ fontSize:12, color:"#9ca3af", marginBottom:8, textAlign:"center" }}>или введи код доступа</div>
+        <div style={{ display:"flex", gap:8 }}>
+          <input style={{ ...s.inp, flex:1, fontSize:13 }} placeholder="Код доступа…" value={codeInput}
+            onChange={e => setCodeInput(e.target.value)} onKeyDown={e => e.key === "Enter" && activateCode()} />
+          <button onClick={activateCode} style={{
+            padding:"0 16px", background:"#f3f4f6", color:"#374151",
+            border:"none", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:14
+          }}>→</button>
+        </div>
+        {codeError && <div style={{ color:"#ef4444", fontSize:12, marginTop:6 }}>{codeError}</div>}
       </div>
 
       {accessType !== "guest" && <button style={s.btnS} onClick={() => setScreen("main")}>← Вернуться</button>}
@@ -546,9 +612,9 @@ export default function App() {
               📂 История
             </button>
           )}
-          {accessType !== "guest" && (
+          {accessType !== "guest" && accessType !== "guest_used" && (
             <button style={{ padding:"9px 12px", background:"#fff", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:12, color:"#9ca3af", cursor:"pointer" }}
-              onClick={() => { setAccessType("guest"); setUserId(null); setUserName(""); setUsageCount(0); }}>
+              onClick={() => { setAccessType("guest"); setUserId(null); setUserName(""); setUsageCount(0); setDaysLeft(null); }}>
               Выйти
             </button>
           )}
