@@ -19,7 +19,7 @@ async function kvGet(url, token, key) {
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Api-Key");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
@@ -29,23 +29,29 @@ export default async function handler(req, res) {
 
   try {
     const body = req.body;
-    console.log("Lava webhook:", JSON.stringify(body));
+    console.log("Lava.top webhook received:", JSON.stringify(body));
 
-    // Lava.top отправляет статус и email покупателя
-    const status = body?.status;
-    const email  = body?.buyer_email || body?.email || body?.customer?.email || null;
+    // Lava.top формат: { buyer: { email: "..." }, status: "completed", eventType: "payment.success" }
+    const eventType = body?.eventType;
+    const status    = body?.status;
+    const email     = body?.buyer?.email;
 
     // Принимаем только успешные платежи
-    if (status !== "success" && status !== "completed" && status !== "paid") {
+    const isSuccess = status === "completed" || eventType === "payment.success";
+    if (!isSuccess) {
+      console.log("Not a success event, skipping. status:", status, "eventType:", eventType);
       return res.status(200).json({ ok: true, message: "not a success event" });
     }
 
     if (!email) {
-      console.log("No email in webhook body:", JSON.stringify(body));
+      console.log("No email found in webhook body:", JSON.stringify(body));
       return res.status(200).json({ ok: true, message: "no email found" });
     }
 
+    console.log("Activating paid access for:", email);
+
     const emailKey = "email:" + email.toLowerCase().trim();
+    const now = Date.now();
 
     // Ищем пользователя по email
     let userId = null;
@@ -57,8 +63,6 @@ export default async function handler(req, res) {
       if (data.result) userId = data.result;
     } catch (e) {}
 
-    const now = Date.now();
-
     if (userId) {
       // Пользователь уже зарегистрирован — обновляем статус
       const user = await kvGet(url, token, "user:" + userId);
@@ -67,7 +71,7 @@ export default async function handler(req, res) {
         user.paidAt = now;
         user.paidDays = PAID_DAYS;
         await kvSet(url, token, "user:" + userId, user);
-        console.log("User upgraded to paid:", email, userId);
+        console.log("Existing user upgraded to paid:", email, userId);
       }
     } else {
       // Новый пользователь — создаём сразу с paid статусом
