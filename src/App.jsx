@@ -732,7 +732,7 @@ export default function App() {
           </div>
         </div>
       )}
-      <button style={s.btnS} onClick={reset}>← Написать ещё один текст</button>
+      {userId && <button style={s.btnS} onClick={reset}>← Написать ещё один текст</button>}
     </div></div>
   );
 }
