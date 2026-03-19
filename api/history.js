@@ -221,26 +221,29 @@ export default async function handler(req, res) {
     }
   }
 
-  // АДМИН: ПРОДЛИТЬ ДОСТУП +90 ДНЕЙ
-  if (action === "adminExtend") {
-    if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
-    if (!targetUserId) return res.status(400).json({ error: "missing targetUserId" });
-    try {
-      const r = await kv(url, token, ["get", "user:" + targetUserId]);
-      if (!r.result) return res.status(404).json({ error: "user not found" });
-      const user = JSON.parse(r.result);
-      const now = Date.now();
-      const currentPaidAt = user.paidAt || now;
-      const daysUsed = (now - currentPaidAt) / (1000 * 60 * 60 * 24);
-      const daysLeft = Math.max(0, PAID_DAYS - daysUsed);
+ // АДМИН: ПРОДЛИТЬ ДОСТУП +90 ДНЕЙ
+if (action === "adminExtend") {
+  if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+  if (!targetUserId) return res.status(400).json({ error: "missing targetUserId" });
+  try {
+    const r = await kv(url, token, ["get", "user:" + targetUserId]);
+    if (!r.result) return res.status(404).json({ error: "user not found" });
+    const user = JSON.parse(r.result);
+    const now = Date.now();
+    const ADD_90 = 90 * 24 * 60 * 60 * 1000;
+    if (user.type === "paid" && user.paidAt) {
+      // Сдвигаем paidAt назад на 90 дней — это даёт +90 дней к сроку
+      user.paidAt = user.paidAt - ADD_90;
+    } else {
       user.type = "paid";
-      user.paidAt = now - ((daysLeft + 90) * 24 * 60 * 60 * 1000);
-      await kv(url, token, ["set", "user:" + targetUserId, JSON.stringify(user)]);
-      return res.status(200).json({ ok: true });
-    } catch (e) {
-      return res.status(500).json({ error: "failed" });
+      user.paidAt = now - ADD_90;
     }
+    await kv(url, token, ["set", "user:" + targetUserId, JSON.stringify(user)]);
+    return res.status(200).json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ error: "failed" });
   }
+}
 
   // АДМИН: СПИСОК ПОЛЬЗОВАТЕЛЕЙ
   if (action === "adminGetUsers") {
