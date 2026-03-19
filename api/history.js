@@ -90,7 +90,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // СОХРАНИТЬ ДЛЯ АДМИНКИ (последние 2 дня)
+  // СОХРАНИТЬ ДЛЯ АДМИНКИ
   if (action === "adminSave") {
     if (!entry) return res.status(400).json({ error: "missing entry" });
     try {
@@ -117,7 +117,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ВХОД ПО EMAIL
+  // ВХОД ПО EMAIL — исправлен баг с обходом
   if (action === "loginByEmail") {
     if (!email) return res.status(400).json({ error: "missing email" });
     const emailKey = "email:" + email.toLowerCase().trim();
@@ -141,6 +141,14 @@ export default async function handler(req, res) {
       if (daysUsed > PAID_DAYS) return res.status(200).json({ ok: false, reason: "expired" });
       const daysLeft = Math.max(0, PAID_DAYS - Math.floor(daysUsed));
       return res.status(200).json({ ok: true, userId: uid, type: "paid", name: user.name || "", usageCount: user.usageCount || 0, daysLeft });
+    }
+    // ИСПРАВЛЕНИЕ: триал юзер при логине получает свой реальный usageCount
+    // и если генерации закончились — возвращаем trial_limit
+    if (user.type === "trial") {
+      if (user.usageCount >= 5) {
+        return res.status(200).json({ ok: false, reason: "trial_limit" });
+      }
+      return res.status(200).json({ ok: true, userId: uid, type: "trial", name: user.name || "", usageCount: user.usageCount || 0 });
     }
     return res.status(200).json({ ok: true, userId: uid, type: "trial", name: user.name || "", usageCount: user.usageCount || 0 });
   }
@@ -176,6 +184,25 @@ export default async function handler(req, res) {
       } catch (e) {}
     }
     return res.status(200).json({ valid: true, type: "paid", daysLeft });
+  }
+
+  // АДМИН: СДЕЛАТЬ ПЛАТНЫМ
+  if (action === "adminSetPaid") {
+    if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+    const { targetUserId } = req.body;
+    if (!targetUserId) return res.status(400).json({ error: "missing targetUserId" });
+    try {
+      const r = await kv(url, token, ["get", "user:" + targetUserId]);
+      if (!r.result) return res.status(404).json({ error: "user not found" });
+      const user = JSON.parse(r.result);
+      user.type = "paid";
+      user.paidAt = Date.now();
+      user.paidCode = "MANUAL";
+      await kv(url, token, ["set", "user:" + targetUserId, JSON.stringify(user)]);
+      return res.status(200).json({ ok: true });
+    } catch (e) {
+      return res.status(500).json({ error: "failed" });
+    }
   }
 
   // АДМИН: СПИСОК ПОЛЬЗОВАТЕЛЕЙ
