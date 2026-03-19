@@ -18,9 +18,14 @@ async function kvGet(url, token, key) {
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Api-Key");
+
   if (req.method === "OPTIONS") return res.status(200).end();
+
+  // Lava.top делает GET для проверки что endpoint живой
+  if (req.method === "GET") return res.status(200).json({ ok: true, message: "webhook endpoint ready" });
+
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const url   = process.env.KV_REST_API_URL;
@@ -39,12 +44,12 @@ export default async function handler(req, res) {
     // Принимаем только успешные платежи
     const isSuccess = status === "completed" || eventType === "payment.success";
     if (!isSuccess) {
-      console.log("Not a success event, skipping. status:", status, "eventType:", eventType);
+      console.log("Not a success event. status:", status, "eventType:", eventType);
       return res.status(200).json({ ok: true, message: "not a success event" });
     }
 
     if (!email) {
-      console.log("No email found in webhook body:", JSON.stringify(body));
+      console.log("No email in body:", JSON.stringify(body));
       return res.status(200).json({ ok: true, message: "no email found" });
     }
 
@@ -64,17 +69,17 @@ export default async function handler(req, res) {
     } catch (e) {}
 
     if (userId) {
-      // Пользователь уже зарегистрирован — обновляем статус
+      // Пользователь уже есть — обновляем статус
       const user = await kvGet(url, token, "user:" + userId);
       if (user) {
         user.type = "paid";
         user.paidAt = now;
         user.paidDays = PAID_DAYS;
         await kvSet(url, token, "user:" + userId, user);
-        console.log("Existing user upgraded to paid:", email, userId);
+        console.log("User upgraded to paid:", email, userId);
       }
     } else {
-      // Новый пользователь — создаём сразу с paid статусом
+      // Новый пользователь — создаём с paid статусом
       const newId = "u_" + Math.random().toString(36).slice(2, 10) + now.toString(36);
       const newUser = {
         id: newId,
