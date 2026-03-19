@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   const token = process.env.KV_REST_API_TOKEN;
   if (!url || !token) return res.status(500).json({ error: "KV not configured" });
 
-  const { action, userId, code, entry, name, email, telegram, password } = req.body || {};
+  const { action, userId, code, entry, name, email, telegram, password, targetUserId } = req.body || {};
 
   // РЕГИСТРАЦИЯ
   if (action === "register") {
@@ -117,7 +117,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // ВХОД ПО EMAIL — исправлен баг с обходом
+  // ВХОД ПО EMAIL
   if (action === "loginByEmail") {
     if (!email) return res.status(400).json({ error: "missing email" });
     const emailKey = "email:" + email.toLowerCase().trim();
@@ -142,8 +142,6 @@ export default async function handler(req, res) {
       const daysLeft = Math.max(0, PAID_DAYS - Math.floor(daysUsed));
       return res.status(200).json({ ok: true, userId: uid, type: "paid", name: user.name || "", usageCount: user.usageCount || 0, daysLeft });
     }
-    // ИСПРАВЛЕНИЕ: триал юзер при логине получает свой реальный usageCount
-    // и если генерации закончились — возвращаем trial_limit
     if (user.type === "trial") {
       if (user.usageCount >= 5) {
         return res.status(200).json({ ok: false, reason: "trial_limit" });
@@ -189,7 +187,6 @@ export default async function handler(req, res) {
   // АДМИН: СДЕЛАТЬ ПЛАТНЫМ
   if (action === "adminSetPaid") {
     if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
-    const { targetUserId } = req.body;
     if (!targetUserId) return res.status(400).json({ error: "missing targetUserId" });
     try {
       const r = await kv(url, token, ["get", "user:" + targetUserId]);
@@ -205,57 +202,40 @@ export default async function handler(req, res) {
     }
   }
 
-  // АДМИН: СПИСОК ПОЛЬЗОВАТЕЛЕЙ
-  if (action === "adminGetUsers") {
+  // АДМИН: ОТМЕНИТЬ ПЛАТНЫЙ
+  if (action === "adminSetTrial") {
     if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+    if (!targetUserId) return res.status(400).json({ error: "missing targetUserId" });
     try {
-      const r = await kv(url, token, ["lrange", "all_users", "0", "499"]);
-      const ids = (r.result || []).filter(Boolean).map(item => {
-        try {
-          const parsed = JSON.parse(item);
-          return parsed.id || parsed;
-        } catch {
-          return item;
-        }
-      });
-      const users = [];
-      for (const id of ids) {
-        try {
-          const ur = await kv(url, token, ["get", "user:" + id]);
-          if (ur.result) {
-            const u = JSON.parse(ur.result);
-            users.push({
-              id: u.id, name: u.name, email: u.email,
-              telegram: u.telegram || "",
-              registeredAt: u.registeredAtFormatted || new Date(u.registeredAt || 0).toLocaleString("ru-RU"),
-              usageCount: u.usageCount || 0,
-              type: u.type || "trial",
-              paidAt: u.paidAt ? new Date(u.paidAt).toLocaleString("ru-RU") : null,
-            });
-          }
-        } catch (e) {}
-      }
-      users.sort((a, b) => (b.id > a.id ? 1 : -1));
-      return res.status(200).json({ ok: true, users });
+      const r = await kv(url, token, ["get", "user:" + targetUserId]);
+      if (!r.result) return res.status(404).json({ error: "user not found" });
+      const user = JSON.parse(r.result);
+      user.type = "trial";
+      user.paidAt = null;
+      user.paidCode = null;
+      user.usageCount = 0;
+      await kv(url, token, ["set", "user:" + targetUserId, JSON.stringify(user)]);
+      return res.status(200).json({ ok: true });
     } catch (e) {
       return res.status(500).json({ error: "failed" });
     }
   }
 
-  // АДМИН: ТЕКСТЫ ЗА 2 ДНЯ
-  if (action === "adminGetTexts") {
+  // АДМИН: ПРОДЛИТЬ ДОСТУП +90 ДНЕЙ
+  if (action === "adminExtend") {
     if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+    if (!targetUserId) return res.status(400).json({ error: "missing targetUserId" });
     try {
-      const r = await kv(url, token, ["lrange", "admin_texts", "0", "199"]);
+      const r = await kv(url, token, ["get", "user:" + targetUserId]);
+      if (!r.result) return res.status(404).json({ error: "user not found" });
+      const user = JSON.parse(r.result);
       const now = Date.now();
-      const items = (r.result || []).map(i => {
-        try { return JSON.parse(i); } catch { return null; }
-      }).filter(Boolean).filter(item => item.savedAt && (now - item.savedAt) < TWO_DAYS_MS);
-      return res.status(200).json({ ok: true, items });
+      const currentPaidAt = user.paidAt || now;
+      const daysUsed = (now - currentPaidAt) / (1000 * 60 * 60 * 24);
+      const daysLeft = Math.max(0, PAID_DAYS - daysUsed);
+      user.type = "paid";
+      user.paidAt = now - ((daysLeft + 90) * 24 * 60 * 60 * 1000);
+      await kv(url, token, ["set", "user:" + targetUserId, JSON.stringify(user)]);
+      return res.status(200).json({ ok: true });
     } catch (e) {
-      return res.status(500).json({ error: "failed" });
-    }
-  }
-
-  return res.status(400).json({ error: "unknown action" });
-}
+      return res.status(5
