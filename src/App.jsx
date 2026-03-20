@@ -3,12 +3,11 @@ import { useState } from "react";
 const PAID_DAYS = 90;
 const TRIAL_LIMIT = 5;
 const TG_SUPPORT = "https://t.me/lavaiai";
-const PAYMENT_URL = "https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95";
 
 const TEXT_TYPES = [
   { id: "post",     label: "📱 Пост",                    desc: "Instagram / Telegram / VK",       styles: ["Живой / Кухонный", "Через личную историю", "Через боль и инсайт"] },
   { id: "carousel", label: "🎠 Карусель Instagram",      desc: "10 идей + готовые слайды",         styles: ["Разрушение мифа", "Это про меня", "Провокация и споры"] },
-  { id: "threads",  label: "🧵 Threads / Живой момент",  desc: "Вирусный пост",           styles: ["Восторг и удивление", "Я в шоке от результата", "Только что произошло"] },
+  { id: "threads",  label: "🧵 Threads / Живой момент",  desc: "Вирусный пост Instagram",           styles: ["Восторг и удивление", "Я в шоке от результата", "Только что произошло"] },
   { id: "reels",    label: "🎬 Reels / Видео",           desc: "Сценарий с хуком и CTA",            styles: ["Провокационный хук", "Сторителлинг", "Список / Инструкция"] },
   { id: "promo",    label: "🔥 Прогрев / Сторис",        desc: "Серия 6 дней, воронка",             styles: ["Уязвимость + Экспертность", "День за днём к офферу", "Через ценности и смыслы"] },
   { id: "sales",    label: "💰 Оффер / УТП",              desc: "Продающий текст, лендинг",          styles: ["Прямой и честный", "Через страх и решение", "Через результат клиента"] },
@@ -23,7 +22,7 @@ const NO_LEN = ["niche", "strategy", "bio", "plan", "promo", "threads", "carouse
 const POST_LIMITS = {
   Instagram: { label: "до 2 200 символов", max: 2200 },
   Telegram:  { label: "до 4 096 символов", max: 4096 },
-  VK:        { label: "до 4 000 символов", max: 4000 },
+  VK:        { label: "до 4 096 символов", max: 4096 },
 };
 
 const REELS_LENGTHS = [
@@ -84,7 +83,7 @@ function buildPrompt(typeId, style, genderId) {
     "- ВАЖНО: никогда не пиши названия блоков — КОМУ, БОЛЬ, РЕЗУЛЬТАТ, МЕТОД, СРОКИ, ХУК, CTA, ДЕНЬ 1. Только живой текст.\n" +
     genderInstruction(genderId);
 
- const map = {
+  const map = {
     post: "\nТЫ ПИШЕШЬ: пост для соцсетей\nInstagram — строго до 2 200 символов. Telegram — до 4 096 символов. VK — до 4 096 символов.\nСТРУКТУРА: хук → история/боль → инсайт → совет → мягкий вопрос\nЭМОДЗИ: можно 2-3 штуки максимум — только в начале абзацев или в конце для акцента. Не в каждой строке.\n",
     carousel: "\nТЫ — топ копирайтер вирусных каруселей Instagram.\nШАГ 1: предложи 10 идей (заголовок до 40 символов, суть, триггер, механика).\nШАГ 2: карусель 8-10 слайдов. Слайд 1: хук. Слайды 2-7: инсайты. Предпоследний: разворот. Последний: CTA со словом ПУЛЬС.\nКаждый слайд: заголовок до 40 символов + 1-3 предложения до 160 символов.\nЭМОДЗИ: 1 эмодзи на слайд максимум — только в заголовке.\n",
     threads: "\nТЫ ПИШЕШЬ: пост живого момента для Threads/Instagram\n1. Эмоция без фильтра — восторг, удивление, можно капслок\n2. Конкретика с цифрами прямо в тексте\n3. Один инсайт почему это работает\n4. Мягкий вопрос в конце\nДо 500 символов. Короткие строки. Много воздуха.\nЭМОДЗИ: 1-2 штуки максимум — в начале или конце, не в середине.\n",
@@ -182,6 +181,22 @@ export default function App() {
     return r.json();
   };
 
+  const goToPay = async () => {
+    try {
+      const email = regEmail || loginEmail || "";
+      const emailParam = email ? `?email=${encodeURIComponent(email)}` : "";
+      const r = await fetch("/api/payment" + emailParam);
+      const data = await r.json();
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
+      }
+    } catch (e) {
+      window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
+    }
+  };
+
   const register = async () => {
     if (!regName.trim() || !regEmail.trim()) { setRegError("Введи имя и email"); return; }
     if (!regEmail.includes("@")) { setRegError("Введи корректный email"); return; }
@@ -209,6 +224,7 @@ export default function App() {
       } else {
         if (data.reason === "expired") setLoginError("Срок доступа истёк. Напиши нам для продления.");
         else if (data.reason === "not_found") setLoginError("Email не найден. Сначала зарегистрируйся бесплатно.");
+        else if (data.reason === "trial_limit") setLoginError("Триал-генерации закончились. Оплати полный доступ.");
         else setLoginError("Ошибка. Попробуй ещё раз.");
       }
     } catch (e) { setLoginError("Ошибка соединения."); }
@@ -320,7 +336,7 @@ export default function App() {
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const copyItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
-const reset = () => {
+  const reset = () => {
     setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra("");
     setBrandVoice(""); setAudience(""); setMonthGoal(""); setCarouselIdea(""); setCarouselStep(1);
     setResult(""); setChat([]); setFollowUp("");
@@ -418,24 +434,7 @@ const reset = () => {
           </div>
         ))}
       </div>
-      <button style={s.btn} onClick={() => window.open(PAYMENT_URL, "_blank")}>💳 Оплатить 1 290 ₽</button>
-      <div style={{ marginTop:16, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"14px 16px" }}>
-        <div style={{ fontSize:13, fontWeight:600, color:"#15803d", marginBottom:8 }}>✅ Уже оплатил?</div>
-        <div style={{ fontSize:12, color:"#374151", marginBottom:10, lineHeight:1.5 }}>
-          Введи email с которого оплачивал — доступ откроется автоматически
-        </div>
-        <div style={{ display:"flex", gap:8 }}>
-          <input style={{ ...s.inp, flex:1, fontSize:13 }} placeholder="твой@email.com" type="email"
-            value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && loginByEmail()} />
-          <button onClick={loginByEmail} disabled={loginLoading} style={{
-            padding:"0 16px", background:"linear-gradient(135deg,#7c3aed,#a855f7)",
-            color:"#fff", border:"none", borderRadius:10, fontWeight:700, cursor:"pointer", fontSize:14,
-            opacity: loginLoading ? 0.7 : 1
-          }}>→</button>
-        </div>
-        {loginError && <div style={{ color:"#ef4444", fontSize:12, marginTop:6 }}>{loginError}</div>}
-      </div>
+      <button style={s.btn} onClick={goToPay}>💳 Оплатить 1 290 ₽</button>
       <div style={{ marginTop:12, textAlign:"center", fontSize:12, color:"#9ca3af" }}>
         Вопросы? <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ color:"#7c3aed", fontWeight:600 }}>Написать в поддержку</a>
       </div>
