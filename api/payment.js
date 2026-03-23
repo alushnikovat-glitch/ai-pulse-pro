@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
       console.log("Sending to Lava:", JSON.stringify(body));
 
-      const response = await fetch("https://developers.lava.top/api/v2/invoice", {
+      const response = await fetch("https://gate.lava.top/api/v2/invoice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
