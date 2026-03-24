@@ -36,7 +36,7 @@ export default async function handler(req, res) {
         email,
         offerId,
         currency: "RUB",
-        buyerLanguage: "ru",
+        buyerLanguage: "RU",
         successUrl: "https://ai-pulse-pro.vercel.app?paid=1",
         failUrl: "https://ai-pulse-pro.vercel.app?paid=0",
       };
