@@ -181,10 +181,10 @@ export default function App() {
     return r.json();
   };
 
-  const goToPay = async () => {
-    try {
-      const email = regEmail || loginEmail || "";
-      const emailParam = email ? `?email=${encodeURIComponent(email)}` : "";
+ const goToPay = async () => {
+  try {
+    const email = regEmail || loginEmail || userName || "";
+    const emailParam = email && email.includes("@") ? `?email=${encodeURIComponent(email)}` : "";
       const r = await fetch("/api/payment" + emailParam);
       const data = await r.json();
       if (data.url) {
