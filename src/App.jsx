@@ -182,20 +182,23 @@ export default function App() {
   };
 
  const goToPay = async () => {
+  const email = regEmail || loginEmail || "";
+  if (!email || !email.includes("@")) {
+    window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
+    return;
+  }
   try {
-    const email = regEmail || loginEmail || userName || "";
-    const emailParam = email && email.includes("@") ? `?email=${encodeURIComponent(email)}` : "";
-      const r = await fetch("/api/payment" + emailParam);
-      const data = await r.json();
-      if (data.url) {
-        window.open(data.url, "_blank");
-      } else {
-        window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
-      }
-    } catch (e) {
+    const r = await fetch("/api/payment?email=" + encodeURIComponent(email));
+    const data = await r.json();
+    if (data.url) {
+      window.open(data.url, "_blank");
+    } else {
       window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
     }
-  };
+  } catch (e) {
+    window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
+  }
+};
 
   const register = async () => {
     if (!regName.trim() || !regEmail.trim()) { setRegError("Введи имя и email"); return; }
