@@ -437,7 +437,19 @@ export default function App() {
           </div>
         ))}
       </div>
-      <button style={s.btn} onClick={goToPay}>💳 Оплатить 1 290 ₽</button>
+      <div style={{ marginBottom:12 }}>
+  <label style={s.lbl}>Email для активации доступа *</label>
+  <input style={s.inp} placeholder="твой@email.com" type="email"
+    value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+    onKeyDown={e => e.key === "Enter" && loginEmail.includes("@") && goToPay()} />
+  <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>
+    На этот email придёт доступ после оплаты
+  </div>
+</div>
+<button style={{ ...s.btn, opacity: loginEmail.includes("@") ? 1 : 0.5 }}
+  onClick={goToPay} disabled={!loginEmail.includes("@")}>
+  💳 Оплатить 1 290 ₽
+</button>
       <div style={{ marginTop:12, textAlign:"center", fontSize:12, color:"#9ca3af" }}>
         Вопросы? <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ color:"#7c3aed", fontWeight:600 }}>Написать в поддержку</a>
       </div>
