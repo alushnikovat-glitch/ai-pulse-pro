@@ -76,7 +76,7 @@ export default async function handler(req, res) {
     if (!kvUrl || !kvToken) return res.status(500).json({ error: "KV not configured" });
     try {
       const body = req.body || {};
-      if (body.status !== "success") {
+      if (body.status !== "success" && body.status !== "completed") {
         return res.status(200).json({ ok: true, skipped: true });
       }
       const email = (body.buyer?.email || body.email || "").toLowerCase().trim();
