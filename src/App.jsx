@@ -183,24 +183,24 @@ export default function App() {
     return r.json();
   };
 
- const goToPay = async () => {
-  const email = regEmail || loginEmail || "";
-  if (!email || !email.includes("@")) {
-    window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
-    return;
-  }
-  try {
-    const r = await fetch("/api/payment?email=" + encodeURIComponent(email));
-    const data = await r.json();
-    if (data.url) {
-      window.open(data.url, "_blank");
-    } else {
+  const goToPay = async () => {
+    const email = regEmail || loginEmail || "";
+    if (!email || !email.includes("@")) {
+      window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
+      return;
+    }
+    try {
+      const r = await fetch("/api/payment?email=" + encodeURIComponent(email));
+      const data = await r.json();
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
+      }
+    } catch (e) {
       window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
     }
-  } catch (e) {
-    window.open("https://app.lava.top/products/95189972-28a0-4df9-8bf7-aed0fa5acf95", "_blank");
-  }
-};
+  };
 
   const register = async () => {
     if (!regName.trim() || !regEmail.trim()) { setRegError("Введи имя и email"); return; }
@@ -277,7 +277,13 @@ export default function App() {
     if (!type || !topic.trim()) return;
     if (accessType === "guest" && usageCount >= 1) { setScreen("register"); return; }
     if (accessType === "trial" && usageCount >= TRIAL_LIMIT) { setScreen("upgrade"); return; }
-    if (accessType === "paid" && userId) { const limitCheck = await api({ action: "checkLimit", userId }); if (!limitCheck.allowed) { alert(`Достигнут лимит ${DAILY_LIMIT_PAID} генераций на сегодня. Лимит сбросится в полночь.`); return; } }
+    if (accessType === "paid" && userId) {
+      const limitCheck = await api({ action: "checkLimit", userId });
+      if (!limitCheck.allowed) {
+        alert(`Достигнут лимит ${DAILY_LIMIT_PAID} генераций на сегодня. Лимит сбросится в полночь.`);
+        return;
+      }
+    }
     setLoading(true); setScreen("result"); setResult(""); setChat([]);
     try {
       const r = await fetch("/api/chat", {
@@ -341,27 +347,28 @@ export default function App() {
   };
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
   const sendFeedback = async (emoji) => {
-  setFeedback(emoji);
-  setTimeout(() => setFeedback(null), 3000);
-  try {
-    await fetch("/api/history", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "feedback",
-        emoji,
-        type: type?.label,
-        topic,
-        userId: userId || "guest"
-      })
-    });
-  } catch (e) {}
-};
-    alert(emoji === "👍" ? "Спасибо! Рады что понравилось 🎉" : "Спасибо за честность! Будем улучшаться 💪");
-  } catch (e) {}
-};
+    setFeedback(emoji);
+    setTimeout(() => setFeedback(null), 3000);
+    try {
+      await fetch("/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "feedback",
+          emoji,
+          type: type?.label,
+          topic,
+          text: result,
+          userId: userId || "guest"
+        })
+      });
+    } catch (e) {}
+  };
+
   const copyItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
+
   const reset = () => {
     setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra("");
     setBrandVoice(""); setAudience(""); setMonthGoal(""); setCarouselIdea(""); setCarouselStep(1);
@@ -369,6 +376,7 @@ export default function App() {
     if (userId) setScreen("main");
     else setScreen("register");
   };
+
   const logout = () => { setAccessType("guest"); setUserId(null); setUserName(""); setUsageCount(0); setDaysLeft(null); };
 
   const canGenerate = type && topic.trim() &&
@@ -386,7 +394,6 @@ export default function App() {
     ta: { width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box", resize:"vertical", minHeight:68, fontFamily:"inherit" },
     btn: { width:"100%", padding:13, background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer", marginTop:8 },
     btnS: { width:"100%", padding:11, background:"#f3f4f6", color:"#374151", border:"none", borderRadius:12, fontSize:14, fontWeight:500, cursor:"pointer", marginTop:8 },
-    sel: { width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, background:"#fff", outline:"none", boxSizing:"border-box" },
     box: { background:"#f9fafb", border:"1.5px solid #e5e7eb", borderRadius:14, padding:18, fontSize:14, lineHeight:1.8, color:"#1f2937", whiteSpace:"pre-wrap", minHeight:140 },
     chip: { display:"inline-block", background:"#ede9fe", color:"#6d28d9", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600, marginBottom:14 },
     badge: { display:"inline-flex", alignItems:"center", gap:6, background:"#f0fdf4", border:"1px solid #bbf7d0", color:"#15803d", borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600 },
@@ -461,18 +468,18 @@ export default function App() {
         ))}
       </div>
       <div style={{ marginBottom:12 }}>
-  <label style={s.lbl}>Email для активации доступа *</label>
-  <input style={s.inp} placeholder="твой@email.com" type="email"
-    value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-    onKeyDown={e => e.key === "Enter" && loginEmail.includes("@") && goToPay()} />
-  <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>
-    На этот email придёт доступ после оплаты
-  </div>
-</div>
-<button style={{ ...s.btn, opacity: loginEmail.includes("@") ? 1 : 0.5 }}
-  onClick={goToPay} disabled={!loginEmail.includes("@")}>
-  💳 Оплатить 1 290 ₽
-</button>
+        <label style={s.lbl}>Email для активации доступа *</label>
+        <input style={s.inp} placeholder="твой@email.com" type="email"
+          value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && loginEmail.includes("@") && goToPay()} />
+        <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>
+          На этот email придёт доступ после оплаты
+        </div>
+      </div>
+      <button style={{ ...s.btn, opacity: loginEmail.includes("@") ? 1 : 0.5 }}
+        onClick={goToPay} disabled={!loginEmail.includes("@")}>
+        💳 Оплатить 1 290 ₽
+      </button>
       <div style={{ marginTop:12, textAlign:"center", fontSize:12, color:"#9ca3af" }}>
         Вопросы? <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ color:"#7c3aed", fontWeight:600 }}>Написать в поддержку</a>
       </div>
@@ -697,7 +704,6 @@ export default function App() {
           <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
             💬 Поддержка
           </a>
-         
           {accessType === "guest" && (
             <button style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
               onClick={() => setScreen("login")}>🔑 Войти</button>
@@ -729,17 +735,17 @@ export default function App() {
           <div style={{ ...s.box, fontSize:NO_LEN.includes(type?.id) ? 13 : 14 }}>{result}</div>
           <button style={s.btn} onClick={copy}>{copied ? "✅ Скопировано!" : "📋 Скопировать"}</button>
           <div style={{ marginTop:8 }}>
-  {feedback ? (
-    <div style={{ textAlign:"center", padding:"12px", background: feedback === "👍" ? "#f0fdf4" : "#fef2f2", border: `1.5px solid ${feedback === "👍" ? "#bbf7d0" : "#fecaca"}`, borderRadius:12, fontSize:14, fontWeight:600, color: feedback === "👍" ? "#15803d" : "#dc2626" }}>
-      {feedback === "👍" ? "Рады что понравилось! 🎉" : "Спасибо за честность! Будем улучшаться 💪"}
-    </div>
-  ) : (
-    <div style={{ display:"flex", gap:8 }}>
-      <button onClick={() => sendFeedback("👍")} style={{ flex:1, padding:"10px", background:"#f0fdf4", border:"1.5px solid #bbf7d0", borderRadius:12, fontSize:20, cursor:"pointer" }}>👍</button>
-      <button onClick={() => sendFeedback("👎")} style={{ flex:1, padding:"10px", background:"#fef2f2", border:"1.5px solid #fecaca", borderRadius:12, fontSize:20, cursor:"pointer" }}>👎</button>
-    </div>
-  )}
-</div>
+            {feedback ? (
+              <div style={{ textAlign:"center", padding:"12px", background: feedback === "👍" ? "#f0fdf4" : "#fef2f2", border: `1.5px solid ${feedback === "👍" ? "#bbf7d0" : "#fecaca"}`, borderRadius:12, fontSize:14, fontWeight:600, color: feedback === "👍" ? "#15803d" : "#dc2626" }}>
+                {feedback === "👍" ? "Рады что понравилось! 🎉" : "Спасибо за честность! Будем улучшаться 💪"}
+              </div>
+            ) : (
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={() => sendFeedback("👍")} style={{ flex:1, padding:"10px", background:"#f0fdf4", border:"1.5px solid #bbf7d0", borderRadius:12, fontSize:20, cursor:"pointer" }}>👍</button>
+                <button onClick={() => sendFeedback("👎")} style={{ flex:1, padding:"10px", background:"#fef2f2", border:"1.5px solid #fecaca", borderRadius:12, fontSize:20, cursor:"pointer" }}>👎</button>
+              </div>
+            )}
+          </div>
           {isCarousel && carouselStep === 2 && (
             <div style={{ marginTop:14 }}>
               <label style={s.lbl}>Выбери идею</label>
