@@ -743,6 +743,9 @@ export default function App() {
           <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
             💬 Поддержка
           </a>
+          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
+  🔒 Политика
+</a>
           {accessType === "guest" && (
             <button style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
               onClick={() => setScreen("login")}>🔑 Войти</button>
