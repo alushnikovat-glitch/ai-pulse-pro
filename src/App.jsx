@@ -533,6 +533,7 @@ export default function App() {
   );
 
   if (screen === "main") return (
+    <>
     {showOnboarding && (
   <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
     <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
