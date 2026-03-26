@@ -528,7 +528,6 @@ export default function App() {
             </div>
    );
   }
-}
           
           if (screen === "main") {
     return (
