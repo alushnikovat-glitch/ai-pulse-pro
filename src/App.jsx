@@ -526,10 +526,10 @@ export default function App() {
                 {copiedIdx === i ? "✅ Скопировано!" : "📋 Скопировать"}
               </button>
             </div>
-    );
+   );
   }
-
-  if (screen === "main") {
+}
+          if (screen === "main") {
     return (
       <>
         {showOnboarding && (
