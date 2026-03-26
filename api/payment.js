@@ -97,7 +97,25 @@ export default async function handler(req, res) {
       user.paidAt = Date.now();
       user.paidCode = "LAVA_AUTO";
       await kv(kvUrl, kvToken, ["set", "user:" + uid, JSON.stringify(user)]);
-      return res.status(200).json({ ok: true, activated: true, email });
+
+// Уведомление в Telegram об оплате
+const tgToken = process.env.TELEGRAM_BOT_TOKEN;
+const tgChatId = process.env.TELEGRAM_CHAT_ID;
+if (tgToken && tgChatId) {
+  try {
+    await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: tgChatId,
+        text: `💰 <b>Новая оплата!</b>\n📧 ${email}\n✅ Доступ активирован автоматически\n⏰ ${new Date().toLocaleString("ru-RU")}`,
+        parse_mode: "HTML"
+      })
+    });
+  } catch (e) {}
+}
+
+return res.status(200).json({ ok: true, activated: true, email });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
