@@ -74,7 +74,6 @@ export default async function handler(req, res) {
     await kv(url, token, ["set", emailKey, newId]);
     await kv(url, token, ["lpush", "all_users", newId]);
 
-    // Уведомление в Telegram
     await tg(`🆕 <b>Новая регистрация!</b>\n👤 ${name.trim()}\n📧 ${email.toLowerCase().trim()}${telegram ? "\n✈️ @" + telegram.replace("@","") : ""}\n🕐 ${new Date(now).toLocaleString("ru-RU")}`);
 
     return res.status(200).json({ ok: true, userId: newId, usageCount: 1 });
@@ -287,9 +286,12 @@ export default async function handler(req, res) {
               daysLeft = Math.max(0, Math.round(PAID_DAYS - daysUsed));
             }
             users.push({
-              id: u.id, name: u.name, email: u.email,
+              id: u.id,
+              name: u.name,
+              email: u.email,
               telegram: u.telegram || "",
               registeredAt: u.registeredAtFormatted || new Date(u.registeredAt || 0).toLocaleString("ru-RU"),
+              registeredAtRaw: u.registeredAt || 0,
               usageCount: u.usageCount || 0,
               type: u.type || "trial",
               paidAt: u.paidAt ? new Date(u.paidAt).toLocaleString("ru-RU") : null,
@@ -298,7 +300,8 @@ export default async function handler(req, res) {
           }
         } catch (e) {}
       }
-      users.sort((a, b) => (b.id > a.id ? 1 : -1));
+      // Сортировка по дате регистрации — новые сначала
+      users.sort((a, b) => (b.registeredAtRaw || 0) - (a.registeredAtRaw || 0));
       return res.status(200).json({ ok: true, users });
     } catch (e) {
       return res.status(500).json({ error: "failed" });
