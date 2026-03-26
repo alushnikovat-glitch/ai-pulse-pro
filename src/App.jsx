@@ -526,10 +526,9 @@ export default function App() {
                 {copiedIdx === i ? "✅ Скопировано!" : "📋 Скопировать"}
               </button>
             </div>
-          )}
-     </div>
-    </div>
-  );
+         </div>
+    );
+  }
 
   if (screen === "main") return (
     <>
