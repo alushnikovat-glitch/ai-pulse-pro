@@ -835,5 +835,6 @@ export default function App() {
       )}
       {userId && <button style={s.btnS} onClick={reset}>← Написать ещё один текст</button>}
     </div></div>
+      </>
   );
 }
