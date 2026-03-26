@@ -10,7 +10,7 @@ async function kv(url, token, cmd) {
   return r.json();
 }
 
-async function tg(message) {
+async function tg(msg) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;
@@ -18,7 +18,7 @@ async function tg(message) {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "HTML" })
+      body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: "HTML" })
     });
   } catch (e) {}
 }
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
     await kv(url, token, ["lpush", "all_users", newId]);
 
     // Уведомление в Telegram
-    await tg(`🆕 <b>Новая регистрация!</b>\n👤 ${name.trim()}\n📧 ${email.toLowerCase().trim()}${telegram ? "\n✈️ @" + telegram.replace("@","") : ""}\n⏰ ${new Date(now).toLocaleString("ru-RU")}`);
+    await tg(`🆕 <b>Новая регистрация!</b>\n👤 ${name.trim()}\n📧 ${email.toLowerCase().trim()}${telegram ? "\n✈️ @" + telegram.replace("@","") : ""}\n🕐 ${new Date(now).toLocaleString("ru-RU")}`);
 
     return res.status(200).json({ ok: true, userId: newId, usageCount: 1 });
   }
