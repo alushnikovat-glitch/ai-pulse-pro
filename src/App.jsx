@@ -156,6 +156,7 @@ export default function App() {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState(null);
   const [followUp, setFollowUp] = useState("");
   const [chat, setChat] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -341,6 +342,8 @@ export default function App() {
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const sendFeedback = async (emoji) => {
+  setFeedback(emoji);
+  setTimeout(() => setFeedback(null), 3000);
   try {
     await fetch("/api/history", {
       method: "POST",
@@ -353,6 +356,8 @@ export default function App() {
         userId: userId || "guest"
       })
     });
+  } catch (e) {}
+};
     alert(emoji === "👍" ? "Спасибо! Рады что понравилось 🎉" : "Спасибо за честность! Будем улучшаться 💪");
   } catch (e) {}
 };
@@ -723,9 +728,17 @@ export default function App() {
         <>
           <div style={{ ...s.box, fontSize:NO_LEN.includes(type?.id) ? 13 : 14 }}>{result}</div>
           <button style={s.btn} onClick={copy}>{copied ? "✅ Скопировано!" : "📋 Скопировать"}</button>
-          <div style={{ display:"flex", gap:8, marginTop:8 }}>
-  <button onClick={() => sendFeedback("👍")} style={{ flex:1, padding:"10px", background:"#f0fdf4", border:"1.5px solid #bbf7d0", borderRadius:12, fontSize:20, cursor:"pointer" }}>👍</button>
-  <button onClick={() => sendFeedback("👎")} style={{ flex:1, padding:"10px", background:"#fef2f2", border:"1.5px solid #fecaca", borderRadius:12, fontSize:20, cursor:"pointer" }}>👎</button>
+          <div style={{ marginTop:8 }}>
+  {feedback ? (
+    <div style={{ textAlign:"center", padding:"12px", background: feedback === "👍" ? "#f0fdf4" : "#fef2f2", border: `1.5px solid ${feedback === "👍" ? "#bbf7d0" : "#fecaca"}`, borderRadius:12, fontSize:14, fontWeight:600, color: feedback === "👍" ? "#15803d" : "#dc2626" }}>
+      {feedback === "👍" ? "Рады что понравилось! 🎉" : "Спасибо за честность! Будем улучшаться 💪"}
+    </div>
+  ) : (
+    <div style={{ display:"flex", gap:8 }}>
+      <button onClick={() => sendFeedback("👍")} style={{ flex:1, padding:"10px", background:"#f0fdf4", border:"1.5px solid #bbf7d0", borderRadius:12, fontSize:20, cursor:"pointer" }}>👍</button>
+      <button onClick={() => sendFeedback("👎")} style={{ flex:1, padding:"10px", background:"#fef2f2", border:"1.5px solid #fecaca", borderRadius:12, fontSize:20, cursor:"pointer" }}>👎</button>
+    </div>
+  )}
 </div>
           {isCarousel && carouselStep === 2 && (
             <div style={{ marginTop:14 }}>
