@@ -529,6 +529,7 @@ export default function App() {
    );
   }
 }
+          
           if (screen === "main") {
     return (
       <>
