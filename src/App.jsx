@@ -126,6 +126,7 @@ export default function App() {
   const [accessType, setAccessType] = useState("guest");
   const [usageCount, setUsageCount] = useState(0);
   const [daysLeft, setDaysLeft] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
@@ -211,7 +212,7 @@ export default function App() {
       if (data.ok) {
         setUserId(data.userId); setUserName(regName.trim());
         setUsageCount(data.usageCount || 1); setAccessType("trial");
-        setScreen("main"); setRegError("");
+        setScreen("main"); setShowOnboarding(true); setRegError("");
       } else { setRegError("Ошибка. Попробуй ещё раз."); }
     } catch (e) { setRegError("Ошибка соединения."); }
     setRegLoading(false);
@@ -532,6 +533,44 @@ export default function App() {
   );
 
   if (screen === "main") return (
+    {showOnboarding && (
+  <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+    <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
+      <div style={{ textAlign:"center", marginBottom:24 }}>
+        <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
+        <div style={{ fontSize:22, fontWeight:700, color:"#1a1a2e", marginBottom:8 }}>Добро пожаловать!</div>
+        <div style={{ fontSize:14, color:"#6b7280", lineHeight:1.6 }}>Ты получила 4 бесплатные генерации. Вот как начать:</div>
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:24 }}>
+        <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+          <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>1</div>
+          <div>
+            <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>Выбери формат</div>
+            <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>Пост, карусель, reels, прогрев — выбери что нужно прямо сейчас</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+          <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>2</div>
+          <div>
+            <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>Опиши тему</div>
+            <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>Напиши о чём текст — чем конкретнее, тем лучше результат</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+          <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>3</div>
+          <div>
+            <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>Получи текст</div>
+            <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>Нажми кнопку — AI напишет текст с душой и пониманием аудитории</div>
+          </div>
+        </div>
+      </div>
+      <button style={{ width:"100%", padding:13, background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer" }}
+        onClick={() => setShowOnboarding(false)}>
+        Понятно, начнём! 🚀
+      </button>
+    </div>
+  </div>
+)}
     <div style={s.wrap}><div style={s.card}>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
         <div style={s.badge}>✦ AI Pulse PRO</div>
