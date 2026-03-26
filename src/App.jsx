@@ -248,7 +248,6 @@ export default function App() {
     const genderNote = gender === "female" ? " (автор — женщина)" : " (автор — мужчина)";
     const voice = brandVoice.trim() ? "\nГолос бренда: " + brandVoice : "";
     const ctx = extra.trim() ? "\nКонтекст: " + extra : "";
-
     if (isCarousel) {
       if (carouselStep === 1) return "ШАГ 1. 10 идей каруселей" + genderNote + ".\nНиша: " + topic + "\nПродукт: " + product + "\nБоль: " + fact + voice + ctx;
       return "ШАГ 2. Напиши карусель" + genderNote + ".\nНиша: " + topic + "\nПродукт: " + product + "\nБоль: " + fact + "\nИдея: " + carouselIdea + voice;
@@ -357,10 +356,8 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "feedback",
-          emoji,
-          type: type?.label,
-          topic,
+          action: "feedback", emoji,
+          type: type?.label, topic,
           text: result,
           userId: userId || "guest"
         })
@@ -407,6 +404,37 @@ export default function App() {
     }),
     platBtn: (a) => ({ padding:"7px 16px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500, border: a ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: a ? "#ede9fe" : "#f9fafb", color: a ? "#6d28d9" : "#374151" }),
   };
+
+  const Onboarding = () => (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
+          <div style={{ fontSize:22, fontWeight:700, color:"#1a1a2e", marginBottom:8 }}>Добро пожаловать!</div>
+          <div style={{ fontSize:14, color:"#6b7280", lineHeight:1.6 }}>Ты получила 4 бесплатные генерации. Вот как начать:</div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:24 }}>
+          {[
+            { n:1, title:"Выбери формат", desc:"Пост, карусель, reels, прогрев — выбери что нужно прямо сейчас" },
+            { n:2, title:"Опиши тему", desc:"Напиши о чём текст — чем конкретнее, тем лучше результат" },
+            { n:3, title:"Получи текст", desc:"Нажми кнопку — AI напишет текст с душой и пониманием аудитории" },
+          ].map(item => (
+            <div key={item.n} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+              <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>{item.n}</div>
+              <div>
+                <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>{item.title}</div>
+                <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>{item.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button style={{ width:"100%", padding:13, background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer" }}
+          onClick={() => setShowOnboarding(false)}>
+          Понятно, начнём! 🚀
+        </button>
+      </div>
+    </div>
+  );
 
   if (screen === "login") return (
     <div style={s.wrap}><div style={s.card}>
@@ -473,9 +501,7 @@ export default function App() {
         <input style={s.inp} placeholder="твой@email.com" type="email"
           value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
           onKeyDown={e => e.key === "Enter" && loginEmail.includes("@") && goToPay()} />
-        <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>
-          На этот email придёт доступ после оплаты
-        </div>
+        <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>На этот email придёт доступ после оплаты</div>
       </div>
       <button style={{ ...s.btn, opacity: loginEmail.includes("@") ? 1 : 0.5 }}
         onClick={goToPay} disabled={!loginEmail.includes("@")}>
@@ -526,237 +552,202 @@ export default function App() {
                 {copiedIdx === i ? "✅ Скопировано!" : "📋 Скопировать"}
               </button>
             </div>
-   );
-  }
-          
-          if (screen === "main") {
-    return (
-      <>
-        {showOnboarding && (
-          <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-            <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
-              <div style={{ textAlign:"center", marginBottom:24 }}>
-        <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
-        <div style={{ fontSize:22, fontWeight:700, color:"#1a1a2e", marginBottom:8 }}>Добро пожаловать!</div>
-        <div style={{ fontSize:14, color:"#6b7280", lineHeight:1.6 }}>Ты получила 4 бесплатные генерации. Вот как начать:</div>
-      </div>
-      <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:24 }}>
-        <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-          <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>1</div>
-          <div>
-            <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>Выбери формат</div>
-            <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>Пост, карусель, reels, прогрев — выбери что нужно прямо сейчас</div>
-          </div>
-        </div>
-        <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-          <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>2</div>
-          <div>
-            <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>Опиши тему</div>
-            <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>Напиши о чём текст — чем конкретнее, тем лучше результат</div>
-          </div>
-        </div>
-        <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-          <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>3</div>
-          <div>
-            <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>Получи текст</div>
-            <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>Нажми кнопку — AI напишет текст с душой и пониманием аудитории</div>
-          </div>
-        </div>
-      </div>
-      <button style={{ width:"100%", padding:13, background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer" }}
-        onClick={() => setShowOnboarding(false)}>
-        Понятно, начнём! 🚀
-      </button>
-    </div>
-  </div>
-)}
-    <div style={s.wrap}><div style={s.card}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
-        <div style={s.badge}>✦ AI Pulse PRO</div>
-        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-          {accessType === "trial" && <div style={{ fontSize:12, color:"#9ca3af" }}>{usageCount}/{TRIAL_LIMIT}</div>}
-          {userId && (
-            <button style={{ background:"#f3f4f6", border:"none", borderRadius:10, padding:"6px 12px", fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
-              onClick={() => { loadHistory(); setScreen("history"); }}>📂</button>
           )}
         </div>
-      </div>
+      ))}
+    </div></div>
+  );
 
-      {userName && <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>Привет, {userName} 👋</div>}
-      <div style={s.title}>Создать текст</div>
-      <div style={s.sub}>Выбери формат — напишу с душой и пониманием аудитории</div>
-
-      <label style={s.lbl}>Формат</label>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:18 }}>
-        {TEXT_TYPES.map(t => (
-          <div key={t.id} onClick={() => pickType(t)} style={{
-            border: type?.id === t.id ? "2px solid #7c3aed" : "2px solid #e5e7eb",
-            borderRadius:12, padding:"10px 12px", cursor:"pointer",
-            background: type?.id === t.id ? "#f5f0ff" : "#fff", transition:"all .15s"
-          }}>
-            <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>{t.label}</div>
-            <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>{t.desc}</div>
+  if (screen === "main") return (
+    <>
+      {showOnboarding && <Onboarding />}
+      <div style={s.wrap}><div style={s.card}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+          <div style={s.badge}>✦ AI Pulse PRO</div>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            {accessType === "trial" && <div style={{ fontSize:12, color:"#9ca3af" }}>{usageCount}/{TRIAL_LIMIT}</div>}
+            {userId && (
+              <button style={{ background:"#f3f4f6", border:"none", borderRadius:10, padding:"6px 12px", fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
+                onClick={() => { loadHistory(); setScreen("history"); }}>📂</button>
+            )}
           </div>
-        ))}
-      </div>
+        </div>
 
-      {type && (
-        <>
-          <div style={{ marginBottom:16 }}>
-            <label style={s.lbl}>Стиль подачи</label>
-            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-              {type.styles.map(st => (
-                <div key={st} onClick={() => setStyle(st)} style={{
-                  padding:"7px 14px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500,
-                  border: style === st ? "2px solid #7c3aed" : "2px solid #e5e7eb",
-                  background: style === st ? "#ede9fe" : "#f9fafb",
-                  color: style === st ? "#6d28d9" : "#374151"
-                }}>{st}</div>
-              ))}
+        {userName && <div style={{ fontSize:13, color:"#6b7280", marginBottom:16 }}>Привет, {userName} 👋</div>}
+        <div style={s.title}>Создать текст</div>
+        <div style={s.sub}>Выбери формат — напишу с душой и пониманием аудитории</div>
+
+        <label style={s.lbl}>Формат</label>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:18 }}>
+          {TEXT_TYPES.map(t => (
+            <div key={t.id} onClick={() => pickType(t)} style={{
+              border: type?.id === t.id ? "2px solid #7c3aed" : "2px solid #e5e7eb",
+              borderRadius:12, padding:"10px 12px", cursor:"pointer",
+              background: type?.id === t.id ? "#f5f0ff" : "#fff", transition:"all .15s"
+            }}>
+              <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>{t.label}</div>
+              <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>{t.desc}</div>
             </div>
-          </div>
+          ))}
+        </div>
 
-          {showGender && (
+        {type && (
+          <>
             <div style={{ marginBottom:16 }}>
-              <label style={s.lbl}>От чьего лица пишем</label>
-              <div style={{ display:"flex", gap:8 }}>
-                {GENDERS.map(g => (
-                  <button key={g.id} onClick={() => setGender(g.id)} style={s.togBtn(gender === g.id)}>
-                    {g.id === "female" ? "♀ " : "♂ "}{g.label}
-                  </button>
+              <label style={s.lbl}>Стиль подачи</label>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                {type.styles.map(st => (
+                  <div key={st} onClick={() => setStyle(st)} style={{
+                    padding:"7px 14px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500,
+                    border: style === st ? "2px solid #7c3aed" : "2px solid #e5e7eb",
+                    background: style === st ? "#ede9fe" : "#f9fafb",
+                    color: style === st ? "#6d28d9" : "#374151"
+                  }}>{st}</div>
                 ))}
               </div>
             </div>
-          )}
-        </>
-      )}
-
-      {(isPost || isBio) && (
-        <div style={{ marginBottom:14 }}>
-          <label style={s.lbl}>Платформа</label>
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-            {(isBio ? ["Instagram","Telegram"] : ["Instagram","Telegram","VK"]).map(p => (
-              <div key={p} style={s.platBtn(platform === p)} onClick={() => setPlatform(p)}>
-                {p}
-                {isPost && <span style={{ fontSize:10, color:"#9ca3af", marginLeft:4 }}>{POST_LIMITS[p]?.label}</span>}
+            {showGender && (
+              <div style={{ marginBottom:16 }}>
+                <label style={s.lbl}>От чьего лица пишем</label>
+                <div style={{ display:"flex", gap:8 }}>
+                  {GENDERS.map(g => (
+                    <button key={g.id} onClick={() => setGender(g.id)} style={s.togBtn(gender === g.id)}>
+                      {g.id === "female" ? "♀ " : "♂ "}{g.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
+          </>
+        )}
 
-      <label style={s.lbl}>{isThreads || isCarousel ? "Ниша *" : "Тема / о чём *"}</label>
-      <input style={s.inp}
-        placeholder={isThreads || isCarousel ? "Например: психолог, нутрициолог, коуч…" : "Например: курс по инвестициям для мам…"}
-        value={topic} onChange={e => setTopic(e.target.value)} />
-
-      {(isThreads || isCarousel) && (
-        <>
-          <div style={{ marginTop:14 }}>
-            <label style={s.lbl}>{isCarousel ? "Продукт или идея *" : "Продукт или результат *"}</label>
-            <input style={s.inp} placeholder={isCarousel ? "Карусель которая греет к покупке" : "Пост который привёл заявку"} value={product} onChange={e => setProduct(e.target.value)} />
-          </div>
-          <div style={{ marginTop:14 }}>
-            <label style={s.lbl}>{isCarousel ? "Главная боль аудитории *" : "Цифра или факт *"}</label>
-            <input style={s.inp} placeholder={isCarousel ? "Знают что надо копить — но не делают" : "Написала за 7 минут, пришла заявка"} value={fact} onChange={e => setFact(e.target.value)} />
-          </div>
-        </>
-      )}
-
-      {isReels && (
-        <>
-          <div style={{ marginTop:14 }}>
-            <label style={s.lbl}>Целевая аудитория *</label>
-            <input style={s.inp} placeholder="Мамы в декрете 25-35 лет…" value={audience} onChange={e => setAudience(e.target.value)} />
-          </div>
-          <div style={{ marginTop:14 }}>
-            <label style={s.lbl}>Длина сценария</label>
+        {(isPost || isBio) && (
+          <div style={{ marginBottom:14 }}>
+            <label style={s.lbl}>Платформа</label>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              {REELS_LENGTHS.map(l => (
-                <div key={l.id} style={s.platBtn(reelsLength === l.id)} onClick={() => setReelsLength(l.id)}>{l.label}</div>
+              {(isBio ? ["Instagram","Telegram"] : ["Instagram","Telegram","VK"]).map(p => (
+                <div key={p} style={s.platBtn(platform === p)} onClick={() => setPlatform(p)}>
+                  {p}
+                  {isPost && <span style={{ fontSize:10, color:"#9ca3af", marginLeft:4 }}>{POST_LIMITS[p]?.label}</span>}
+                </div>
               ))}
             </div>
           </div>
-        </>
-      )}
-
-      {isSales && (
-        <div style={{ marginTop:14 }}>
-          <label style={s.lbl}>Длина текста</label>
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-            {SALES_LENGTHS.map(l => (
-              <div key={l.id} style={s.platBtn(salesLength === l.id)} onClick={() => setSalesLength(l.id)}>{l.label}</div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isPlan && (
-        <div style={{ marginTop:14 }}>
-          <label style={s.lbl}>Цель на месяц *</label>
-          <input style={s.inp} placeholder="Продажи курса / рост аудитории / прогрев" value={monthGoal} onChange={e => setMonthGoal(e.target.value)} />
-        </div>
-      )}
-
-      <div style={{ marginTop:14 }}>
-        <label style={s.lbl}>Голос бренда (необязательно)</label>
-        <textarea style={{ ...s.ta, minHeight:52 }} placeholder="Вставь 2-3 примера своих текстов — AI подстроится…" value={brandVoice} onChange={e => setBrandVoice(e.target.value)} />
-      </div>
-      <div style={{ marginTop:10 }}>
-        <label style={s.lbl}>Контекст (необязательно)</label>
-        <textarea style={{ ...s.ta, minHeight:52 }} placeholder="ЦА, боли, УТП…" value={extra} onChange={e => setExtra(e.target.value)} />
-      </div>
-
-      <button style={{ ...s.btn, marginTop:20, opacity: canGenerate ? 1 : 0.5 }} onClick={generate} disabled={!canGenerate}>
-        {type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : isPlan ? "📅 Составить план" : isCarousel ? "🎠 Получить идеи" : "✨ Написать текст"}
-      </button>
-
-      <div style={{ marginTop:28, borderTop:"1px solid #f3f4f6", paddingTop:20 }}>
-        {accessType === "guest" && (
-          <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:12, padding:"12px 16px", marginBottom:16, fontSize:13, color:"#92400e", lineHeight:1.6 }}>
-            👋 Это твоя бесплатная генерация. После — быстрая регистрация для ещё 4 текстов.
-          </div>
         )}
-        {accessType === "trial" && (
-          <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", border:"1.5px solid #e9d5ff", borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
-            <div style={{ fontSize:13, fontWeight:600, color:"#6d28d9", marginBottom:6 }}>⚡ {usageCount} из {TRIAL_LIMIT} генераций использовано</div>
-            <div style={{ background:"#e9d5ff", borderRadius:20, height:6, marginBottom:10 }}>
-              <div style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", borderRadius:20, height:6, width:(usageCount/TRIAL_LIMIT*100)+"%" }} />
+
+        <label style={s.lbl}>{isThreads || isCarousel ? "Ниша *" : "Тема / о чём *"}</label>
+        <input style={s.inp}
+          placeholder={isThreads || isCarousel ? "Например: психолог, нутрициолог, коуч…" : "Например: курс по инвестициям для мам…"}
+          value={topic} onChange={e => setTopic(e.target.value)} />
+
+        {(isThreads || isCarousel) && (
+          <>
+            <div style={{ marginTop:14 }}>
+              <label style={s.lbl}>{isCarousel ? "Продукт или идея *" : "Продукт или результат *"}</label>
+              <input style={s.inp} placeholder={isCarousel ? "Карусель которая греет к покупке" : "Пост который привёл заявку"} value={product} onChange={e => setProduct(e.target.value)} />
             </div>
-            <div style={{ fontSize:12, color:"#7c3aed", marginBottom:8 }}>Переходи на полный доступ — безлимит за 1 290 ₽ на 3 месяца</div>
-            <button style={{ ...s.btn, marginTop:0, fontSize:13, padding:"10px" }} onClick={() => setScreen("upgrade")}>
-              🚀 Купить полный доступ
-            </button>
-          </div>
+            <div style={{ marginTop:14 }}>
+              <label style={s.lbl}>{isCarousel ? "Главная боль аудитории *" : "Цифра или факт *"}</label>
+              <input style={s.inp} placeholder={isCarousel ? "Знают что надо копить — но не делают" : "Написала за 7 минут, пришла заявка"} value={fact} onChange={e => setFact(e.target.value)} />
+            </div>
+          </>
         )}
-        {accessType === "paid" && (
-          <div style={{ display:"flex", alignItems:"center", gap:8, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"10px 14px", marginBottom:16 }}>
-            <span>✅</span>
-            <div>
-              <div style={{ fontSize:12, fontWeight:600, color:"#15803d" }}>Полный доступ активен</div>
-              <div style={{ fontSize:11, color:"#6b7280" }}>{daysLeft !== null ? "Осталось " + daysLeft + " дней" : "3 месяца"}</div>
+
+        {isReels && (
+          <>
+            <div style={{ marginTop:14 }}>
+              <label style={s.lbl}>Целевая аудитория *</label>
+              <input style={s.inp} placeholder="Мамы в декрете 25-35 лет…" value={audience} onChange={e => setAudience(e.target.value)} />
+            </div>
+            <div style={{ marginTop:14 }}>
+              <label style={s.lbl}>Длина сценария</label>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {REELS_LENGTHS.map(l => (
+                  <div key={l.id} style={s.platBtn(reelsLength === l.id)} onClick={() => setReelsLength(l.id)}>{l.label}</div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {isSales && (
+          <div style={{ marginTop:14 }}>
+            <label style={s.lbl}>Длина текста</label>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {SALES_LENGTHS.map(l => (
+                <div key={l.id} style={s.platBtn(salesLength === l.id)} onClick={() => setSalesLength(l.id)}>{l.label}</div>
+              ))}
             </div>
           </div>
         )}
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-          <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
-            💬 Поддержка
-          </a>
-          <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
-  🔒 Политика
-</a>
+
+        {isPlan && (
+          <div style={{ marginTop:14 }}>
+            <label style={s.lbl}>Цель на месяц *</label>
+            <input style={s.inp} placeholder="Продажи курса / рост аудитории / прогрев" value={monthGoal} onChange={e => setMonthGoal(e.target.value)} />
+          </div>
+        )}
+
+        <div style={{ marginTop:14 }}>
+          <label style={s.lbl}>Голос бренда (необязательно)</label>
+          <textarea style={{ ...s.ta, minHeight:52 }} placeholder="Вставь 2-3 примера своих текстов — AI подстроится…" value={brandVoice} onChange={e => setBrandVoice(e.target.value)} />
+        </div>
+        <div style={{ marginTop:10 }}>
+          <label style={s.lbl}>Контекст (необязательно)</label>
+          <textarea style={{ ...s.ta, minHeight:52 }} placeholder="ЦА, боли, УТП…" value={extra} onChange={e => setExtra(e.target.value)} />
+        </div>
+
+        <button style={{ ...s.btn, marginTop:20, opacity: canGenerate ? 1 : 0.5 }} onClick={generate} disabled={!canGenerate}>
+          {type?.id === "niche" ? "🔍 Запустить анализ" : type?.id === "strategy" ? "📈 Построить стратегию" : isPlan ? "📅 Составить план" : isCarousel ? "🎠 Получить идеи" : "✨ Написать текст"}
+        </button>
+
+        <div style={{ marginTop:28, borderTop:"1px solid #f3f4f6", paddingTop:20 }}>
           {accessType === "guest" && (
-            <button style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
-              onClick={() => setScreen("login")}>🔑 Войти</button>
+            <div style={{ background:"#fffbeb", border:"1px solid #fde68a", borderRadius:12, padding:"12px 16px", marginBottom:16, fontSize:13, color:"#92400e", lineHeight:1.6 }}>
+              👋 Это твоя бесплатная генерация. После — быстрая регистрация для ещё 4 текстов.
+            </div>
           )}
-          {userId && (
-            <button style={{ padding:"9px 12px", background:"#fff", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:12, color:"#9ca3af", cursor:"pointer" }} onClick={logout}>
-              Выйти
-            </button>
+          {accessType === "trial" && (
+            <div style={{ background:"linear-gradient(135deg,#f5f0ff,#fdf2f8)", border:"1.5px solid #e9d5ff", borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
+              <div style={{ fontSize:13, fontWeight:600, color:"#6d28d9", marginBottom:6 }}>⚡ {usageCount} из {TRIAL_LIMIT} генераций использовано</div>
+              <div style={{ background:"#e9d5ff", borderRadius:20, height:6, marginBottom:10 }}>
+                <div style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", borderRadius:20, height:6, width:(usageCount/TRIAL_LIMIT*100)+"%" }} />
+              </div>
+              <div style={{ fontSize:12, color:"#7c3aed", marginBottom:8 }}>Переходи на полный доступ — безлимит за 1 290 ₽ на 3 месяца</div>
+              <button style={{ ...s.btn, marginTop:0, fontSize:13, padding:"10px" }} onClick={() => setScreen("upgrade")}>
+                🚀 Купить полный доступ
+              </button>
+            </div>
           )}
+          {accessType === "paid" && (
+            <div style={{ display:"flex", alignItems:"center", gap:8, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:12, padding:"10px 14px", marginBottom:16 }}>
+              <span>✅</span>
+              <div>
+                <div style={{ fontSize:12, fontWeight:600, color:"#15803d" }}>Полный доступ активен</div>
+                <div style={{ fontSize:11, color:"#6b7280" }}>{daysLeft !== null ? "Осталось " + daysLeft + " дней" : "3 месяца"}</div>
+              </div>
+            </div>
+          )}
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            <a href={TG_SUPPORT} target="_blank" rel="noreferrer" style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
+              💬 Поддержка
+            </a>
+            <a href="/privacy.html" target="_blank" rel="noreferrer" style={{ padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", textDecoration:"none", textAlign:"center" }}>
+              🔒 Политика
+            </a>
+            {accessType === "guest" && (
+              <button style={{ flex:1, minWidth:100, padding:"9px 12px", background:"#f3f4f6", border:"none", borderRadius:10, fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
+                onClick={() => setScreen("login")}>🔑 Войти</button>
+            )}
+            {userId && (
+              <button style={{ padding:"9px 12px", background:"#fff", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:12, color:"#9ca3af", cursor:"pointer" }} onClick={logout}>
+                Выйти
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-    </div></div>
+      </div></div>
+    </>
   );
 
   if (screen === "result") return (
@@ -833,6 +824,5 @@ export default function App() {
       )}
       {userId && <button style={s.btnS} onClick={reset}>← Написать ещё один текст</button>}
     </div></div>
-      </>
   );
 }
