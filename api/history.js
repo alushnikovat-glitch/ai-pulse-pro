@@ -361,6 +361,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "failed" });
     }
   }
-
+// ОБРАТНАЯ СВЯЗЬ
+if (action === "feedback") {
+  const { emoji, type: fType, topic: fTopic, userId: fUserId } = req.body || {};
+  await tg(`${emoji} <b>Обратная связь</b>\nФормат: ${fType || "—"}\nТема: ${fTopic || "—"}\nПользователь: ${fUserId || "—"}`);
+  return res.status(200).json({ ok: true });
+}
   return res.status(400).json({ error: "unknown action" });
 }
