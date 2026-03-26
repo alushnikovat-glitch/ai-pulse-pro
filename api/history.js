@@ -1,6 +1,7 @@
 const PAID_DAYS = 90;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "pulse_admin_2026";
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+const DAILY_LIMIT_PAID = 50;
 
 async function kv(url, token, cmd) {
   const parts = cmd.map(x => encodeURIComponent(String(x)));
@@ -25,6 +26,11 @@ async function tg(msg) {
 
 function genUserId() {
   return "u_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${d.getUTCMonth()+1}-${d.getUTCDate()}`;
 }
 
 export default async function handler(req, res) {
@@ -73,10 +79,31 @@ export default async function handler(req, res) {
     await kv(url, token, ["set", "user:" + newId, JSON.stringify(user)]);
     await kv(url, token, ["set", emailKey, newId]);
     await kv(url, token, ["lpush", "all_users", newId]);
-
     await tg(`🆕 <b>Новая регистрация!</b>\n👤 ${name.trim()}\n📧 ${email.toLowerCase().trim()}${telegram ? "\n✈️ @" + telegram.replace("@","") : ""}\n🕐 ${new Date(now).toLocaleString("ru-RU")}`);
-
     return res.status(200).json({ ok: true, userId: newId, usageCount: 1 });
+  }
+
+  // ПРОВЕРКА ДНЕВНОГО ЛИМИТА
+  if (action === "checkLimit") {
+    if (!userId) return res.status(200).json({ ok: true, allowed: true });
+    try {
+      const userRes = await kv(url, token, ["get", "user:" + userId]);
+      if (!userRes.result) return res.status(200).json({ ok: true, allowed: true });
+      const user = JSON.parse(userRes.result);
+      if (user.type !== "paid") return res.status(200).json({ ok: true, allowed: true });
+      const dayKey = "daily:" + userId + ":" + getTodayKey();
+      const countRes = await kv(url, token, ["get", dayKey]);
+      const count = parseInt(countRes.result || "0");
+      return res.status(200).json({
+        ok: true,
+        allowed: count < DAILY_LIMIT_PAID,
+        count,
+        limit: DAILY_LIMIT_PAID,
+        remaining: Math.max(0, DAILY_LIMIT_PAID - count)
+      });
+    } catch (e) {
+      return res.status(200).json({ ok: true, allowed: true });
+    }
   }
 
   // ИНКРЕМЕНТ
@@ -88,6 +115,19 @@ export default async function handler(req, res) {
         const user = JSON.parse(r.result);
         user.usageCount = (user.usageCount || 0) + 1;
         await kv(url, token, ["set", "user:" + userId, JSON.stringify(user)]);
+
+        // Дневной счётчик для платных
+        if (user.type === "paid") {
+          const dayKey = "daily:" + userId + ":" + getTodayKey();
+          try {
+            const countRes = await kv(url, token, ["get", dayKey]);
+            const count = parseInt(countRes.result || "0") + 1;
+            await kv(url, token, ["set", dayKey, String(count)]);
+            // Удаляем через 2 дня чтобы не засорять базу
+            await kv(url, token, ["expire", dayKey, "172800"]);
+          } catch (e) {}
+        }
+
         return res.status(200).json({ ok: true, usageCount: user.usageCount });
       }
     } catch (e) {}
@@ -300,7 +340,6 @@ export default async function handler(req, res) {
           }
         } catch (e) {}
       }
-      // Сортировка по дате регистрации — новые сначала
       users.sort((a, b) => (b.registeredAtRaw || 0) - (a.registeredAtRaw || 0));
       return res.status(200).json({ ok: true, users });
     } catch (e) {
