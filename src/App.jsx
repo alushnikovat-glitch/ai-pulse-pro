@@ -2,6 +2,7 @@ import { useState } from "react";
 
 const PAID_DAYS = 90;
 const TRIAL_LIMIT = 5;
+const DAILY_LIMIT_PAID = 50;
 const TG_SUPPORT = "https://t.me/lavaiai";
 
 const TEXT_TYPES = [
@@ -275,6 +276,7 @@ export default function App() {
     if (!type || !topic.trim()) return;
     if (accessType === "guest" && usageCount >= 1) { setScreen("register"); return; }
     if (accessType === "trial" && usageCount >= TRIAL_LIMIT) { setScreen("upgrade"); return; }
+    if (accessType === "paid" && userId) { const limitCheck = await api({ action: "checkLimit", userId }); if (!limitCheck.allowed) { alert(`Достигнут лимит ${DAILY_LIMIT_PAID} генераций на сегодня. Лимит сбросится в полночь.`); return; } }
     setLoading(true); setScreen("result"); setResult(""); setChat([]);
     try {
       const r = await fetch("/api/chat", {
