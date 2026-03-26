@@ -1,5 +1,16 @@
 const PAID_DAYS = 90;
-
+async function tg(msg) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: "HTML" })
+    });
+  } catch (e) {}
+}
 async function kv(url, token, cmd) {
   const parts = cmd.map(x => encodeURIComponent(String(x)));
   const r = await fetch(url + "/" + parts.join("/"), {
@@ -114,7 +125,7 @@ if (tgToken && tgChatId) {
     });
   } catch (e) {}
 }
-
+await tg(`💰 <b>Новая оплата!</b>\n📧 ${email}\n✅ Доступ активирован автоматически\n🕐 ${new Date().toLocaleString("ru-RU")}`);
 return res.status(200).json({ ok: true, activated: true, email });
     } catch (e) {
       return res.status(500).json({ error: e.message });
