@@ -340,6 +340,22 @@ export default function App() {
   };
 
   const copy = () => { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const sendFeedback = async (emoji) => {
+  try {
+    await fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "feedback",
+        emoji,
+        type: type?.label,
+        topic,
+        userId: userId || "guest"
+      })
+    });
+    alert(emoji === "👍" ? "Спасибо! Рады что понравилось 🎉" : "Спасибо за честность! Будем улучшаться 💪");
+  } catch (e) {}
+};
   const copyItem = (text, idx) => { navigator.clipboard.writeText(text); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 2000); };
   const reset = () => {
     setType(null); setStyle(""); setTopic(""); setProduct(""); setFact(""); setExtra("");
@@ -707,6 +723,10 @@ export default function App() {
         <>
           <div style={{ ...s.box, fontSize:NO_LEN.includes(type?.id) ? 13 : 14 }}>{result}</div>
           <button style={s.btn} onClick={copy}>{copied ? "✅ Скопировано!" : "📋 Скопировать"}</button>
+          <div style={{ display:"flex", gap:8, marginTop:8 }}>
+  <button onClick={() => sendFeedback("👍")} style={{ flex:1, padding:"10px", background:"#f0fdf4", border:"1.5px solid #bbf7d0", borderRadius:12, fontSize:20, cursor:"pointer" }}>👍</button>
+  <button onClick={() => sendFeedback("👎")} style={{ flex:1, padding:"10px", background:"#fef2f2", border:"1.5px solid #fecaca", borderRadius:12, fontSize:20, cursor:"pointer" }}>👎</button>
+</div>
           {isCarousel && carouselStep === 2 && (
             <div style={{ marginTop:14 }}>
               <label style={s.lbl}>Выбери идею</label>
