@@ -526,16 +526,16 @@ export default function App() {
                 {copiedIdx === i ? "✅ Скопировано!" : "📋 Скопировать"}
               </button>
             </div>
-         </div>
     );
   }
 
-  if (screen === "main") return (
-    <>
-      {showOnboarding && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
-            <div style={{ textAlign:"center", marginBottom:24 }}>
+  if (screen === "main") {
+    return (
+      <>
+        {showOnboarding && (
+          <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+            <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
+              <div style={{ textAlign:"center", marginBottom:24 }}>
         <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
         <div style={{ fontSize:22, fontWeight:700, color:"#1a1a2e", marginBottom:8 }}>Добро пожаловать!</div>
         <div style={{ fontSize:14, color:"#6b7280", lineHeight:1.6 }}>Ты получила 4 бесплатные генерации. Вот как начать:</div>
