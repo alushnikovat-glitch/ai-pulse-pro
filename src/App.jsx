@@ -1,6 +1,3 @@
-Вот полный исправленный `App.jsx` с казахским языком и почищенным промптом:
-
-```jsx
 import { useState } from "react";
 
 const PAID_DAYS = 90;
@@ -863,6 +860,3 @@ export default function App() {
     </div></div>
   );
 }
-```
-
-Копируй целиком в `src/App.jsx` ветки `dev` → закоммить → смёрджи в `main`!
