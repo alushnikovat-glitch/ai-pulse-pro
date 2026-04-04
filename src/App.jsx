@@ -61,6 +61,8 @@ const GENDERS = [
 
 const GENDER_TYPES = ["post", "promo", "sales", "threads", "reels", "bio", "strategy", "niche", "plan", "carousel"];
 
+const DNA_STYLES = ["тёплый и близкий", "уверенный и экспертный", "дерзкий и провокационный", "спокойный и вдумчивый"];
+
 function genderInstruction(genderId) {
   if (genderId === "female") return "\n\nПОЛ АВТОРА: Текст пишется от лица женщины. Используй женский род в глаголах и причастиях (решила, поняла, начала, была). Стиль — тёплый, чувственный, с личными деталями.";
   if (genderId === "male") return "\n\nПОЛ АВТОРА: Текст пишется от лица мужчины. Используй мужской род (решил, понял, начал, был). Стиль — уверенный, прямой, конкретный.";
@@ -138,6 +140,140 @@ function Spinner() {
   );
 }
 
+function DnaModal({ dnaAnswers, setDnaAnswers, dnaStep, setDnaStep, dnaLoading, generateDna, onClose }) {
+  const steps = [
+    {
+      title: "Как обращаешься к аудитории?",
+      content: (
+        <div style={{ display:"flex", gap:8 }}>
+          {["ты", "вы"].map(opt => (
+            <button key={opt} onClick={() => setDnaAnswers(a => ({...a, address: opt}))}
+              style={{ flex:1, padding:"12px", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer", border: dnaAnswers.address === opt ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: dnaAnswers.address === opt ? "#ede9fe" : "#f9fafb", color: dnaAnswers.address === opt ? "#6d28d9" : "#374151" }}>
+              {opt}
+            </button>
+          ))}
+        </div>
+      )
+    },
+    {
+      title: "Твой стиль подачи?",
+      content: (
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {DNA_STYLES.map(opt => (
+            <button key={opt} onClick={() => setDnaAnswers(a => ({...a, style: opt}))}
+              style={{ padding:"11px 16px", borderRadius:12, fontSize:14, fontWeight:500, cursor:"pointer", textAlign:"left", border: dnaAnswers.style === opt ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: dnaAnswers.style === opt ? "#ede9fe" : "#f9fafb", color: dnaAnswers.style === opt ? "#6d28d9" : "#374151" }}>
+              {opt}
+            </button>
+          ))}
+        </div>
+      )
+    },
+    {
+      title: "Кто твоя аудитория?",
+      content: (
+        <textarea
+          style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box", resize:"vertical", minHeight:80, fontFamily:"inherit" }}
+          placeholder="Например: женщины 25-40 лет, эксперты, предприниматели…"
+          value={dnaAnswers.audience}
+          onChange={e => setDnaAnswers(a => ({...a, audience: e.target.value}))}
+        />
+      )
+    },
+    {
+      title: "3 слова которые описывают твой контент",
+      content: (
+        <input
+          style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box" }}
+          placeholder="Например: честность, живость, глубина"
+          value={dnaAnswers.words}
+          onChange={e => setDnaAnswers(a => ({...a, words: e.target.value}))}
+        />
+      )
+    },
+    {
+      title: "Вставь 1-2 примера своих текстов",
+      content: (
+        <textarea
+          style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box", resize:"vertical", minHeight:120, fontFamily:"inherit" }}
+          placeholder="Вставь сюда реальные посты или сообщения которые ты написала…"
+          value={dnaAnswers.examples}
+          onChange={e => setDnaAnswers(a => ({...a, examples: e.target.value}))}
+        />
+      )
+    },
+  ];
+
+  const current = steps[dnaStep];
+  const isLast = dnaStep === steps.length - 1;
+  const canNext = dnaStep === 0 ? true : dnaStep === 1 ? true : dnaStep === 2 ? dnaAnswers.audience.trim() : dnaStep === 3 ? dnaAnswers.words.trim() : dnaAnswers.examples.trim();
+
+  return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:440, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <div style={{ fontSize:13, color:"#9ca3af" }}>Шаг {dnaStep + 1} из {steps.length}</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#9ca3af" }}>×</button>
+        </div>
+        <div style={{ display:"flex", gap:4, marginBottom:24 }}>
+          {steps.map((_, i) => (
+            <div key={i} style={{ flex:1, height:3, borderRadius:2, background: i <= dnaStep ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#e5e7eb" }} />
+          ))}
+        </div>
+        <div style={{ fontSize:48, textAlign:"center", marginBottom:12 }}>🧬</div>
+        <div style={{ fontSize:17, fontWeight:700, color:"#1a1a2e", marginBottom:16, textAlign:"center" }}>{current.title}</div>
+        {current.content}
+        <div style={{ display:"flex", gap:8, marginTop:20 }}>
+          {dnaStep > 0 && (
+            <button onClick={() => setDnaStep(s => s - 1)}
+              style={{ flex:1, padding:12, background:"#f3f4f6", border:"none", borderRadius:12, fontSize:14, fontWeight:500, cursor:"pointer", color:"#374151" }}>
+              ← Назад
+            </button>
+          )}
+          <button
+            onClick={() => isLast ? generateDna() : setDnaStep(s => s + 1)}
+            disabled={!canNext || dnaLoading}
+            style={{ flex:2, padding:12, background: canNext ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#e5e7eb", border:"none", borderRadius:12, fontSize:14, fontWeight:600, cursor: canNext ? "pointer" : "default", color: canNext ? "#fff" : "#9ca3af" }}>
+            {dnaLoading ? "Создаём ДНК голоса… 🧬" : isLast ? "✨ Создать ДНК голоса" : "Далее →"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Onboarding({ onClose }) {
+  return (
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
+          <div style={{ fontSize:22, fontWeight:700, color:"#1a1a2e", marginBottom:8 }}>Добро пожаловать!</div>
+          <div style={{ fontSize:14, color:"#6b7280", lineHeight:1.6 }}>Ты получила 4 бесплатные генерации. Вот как начать:</div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:24 }}>
+          {[
+            { n:1, title:"Выбери формат", desc:"Пост, карусель, reels, прогрев — выбери что нужно прямо сейчас" },
+            { n:2, title:"Опиши тему", desc:"Напиши о чём текст — чем конкретнее, тем лучше результат" },
+            { n:3, title:"Получи текст", desc:"Нажми кнопку — AI напишет текст с душой и пониманием аудитории" },
+          ].map(item => (
+            <div key={item.n} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+              <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>{item.n}</div>
+              <div>
+                <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>{item.title}</div>
+                <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>{item.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button style={{ width:"100%", padding:13, background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer" }}
+          onClick={onClose}>
+          Понятно, начнём! 🚀
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [screen, setScreen] = useState("main");
   const [userId, setUserId] = useState(null);
@@ -187,7 +323,6 @@ export default function App() {
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [copiedIdx, setCopiedIdx] = useState(null);
 
-  // ДНК голоса
   const [showDna, setShowDna] = useState(false);
   const [dnaStep, setDnaStep] = useState(0);
   const [dnaLoading, setDnaLoading] = useState(false);
@@ -248,101 +383,6 @@ export default function App() {
       }
     } catch (e) {}
     setDnaLoading(false);
-  };
-
-  const DnaModal = () => {
-    const steps = [
-      {
-        title: "Как обращаешься к аудитории?",
-        content: (
-          <div style={{ display:"flex", gap:8 }}>
-            {["ты", "вы"].map(opt => (
-              <button key={opt} onClick={() => setDnaAnswers(a => ({...a, address: opt}))}
-                style={{ flex:1, padding:"12px", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer", border: dnaAnswers.address === opt ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: dnaAnswers.address === opt ? "#ede9fe" : "#f9fafb", color: dnaAnswers.address === opt ? "#6d28d9" : "#374151" }}>
-                {opt}
-              </button>
-            ))}
-          </div>
-        )
-      },
-      {
-        title: "Твой стиль подачи?",
-        content: (
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {["тёплый и близкий", "уверенный и экспертный", "дерзкий и провокационный", "спокойный и вдумчивый"].map(opt => (
-              <button key={opt} onClick={() => setDnaAnswers(a => ({...a, style: opt}))}
-                style={{ padding:"11px 16px", borderRadius:12, fontSize:14, fontWeight:500, cursor:"pointer", textAlign:"left", border: dnaAnswers.style === opt ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: dnaAnswers.style === opt ? "#ede9fe" : "#f9fafb", color: dnaAnswers.style === opt ? "#6d28d9" : "#374151" }}>
-                {opt}
-              </button>
-            ))}
-          </div>
-        )
-      },
-      {
-        title: "Кто твоя аудитория?",
-        content: (
-          <textarea style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box", resize:"vertical", minHeight:80, fontFamily:"inherit" }}
-            placeholder="Например: женщины 25-40 лет, эксперты, предприниматели…"
-            value={dnaAnswers.audience}
-            onChange={e => setDnaAnswers(a => ({...a, audience: e.target.value}))} />
-        )
-      },
-      {
-        title: "3 слова которые описывают твой контент",
-        content: (
-          <input style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box" }}
-            placeholder="Например: честность, живость, глубина"
-            value={dnaAnswers.words}
-            onChange={e => setDnaAnswers(a => ({...a, words: e.target.value}))} />
-        )
-      },
-      {
-        title: "Вставь 1-2 примера своих текстов",
-        content: (
-          <textarea style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box", resize:"vertical", minHeight:120, fontFamily:"inherit" }}
-            placeholder="Вставь сюда реальные посты или сообщения которые ты написала…"
-            value={dnaAnswers.examples}
-            onChange={e => setDnaAnswers(a => ({...a, examples: e.target.value}))} />
-        )
-      },
-    ];
-
-    const current = steps[dnaStep];
-    const isLast = dnaStep === steps.length - 1;
-    const canNext = dnaStep === 0 ? true : dnaStep === 1 ? true : dnaStep === 2 ? dnaAnswers.audience.trim() : dnaStep === 3 ? dnaAnswers.words.trim() : dnaAnswers.examples.trim();
-
-    return (
-      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-        <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:440, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-            <div style={{ fontSize:13, color:"#9ca3af" }}>Шаг {dnaStep + 1} из {steps.length}</div>
-            <button onClick={() => { setShowDna(false); setDnaStep(0); }} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#9ca3af" }}>×</button>
-          </div>
-          <div style={{ display:"flex", gap:4, marginBottom:24 }}>
-            {steps.map((_, i) => (
-              <div key={i} style={{ flex:1, height:3, borderRadius:2, background: i <= dnaStep ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#e5e7eb" }} />
-            ))}
-          </div>
-          <div style={{ fontSize:48, textAlign:"center", marginBottom:12 }}>🧬</div>
-          <div style={{ fontSize:17, fontWeight:700, color:"#1a1a2e", marginBottom:16, textAlign:"center" }}>{current.title}</div>
-          {current.content}
-          <div style={{ display:"flex", gap:8, marginTop:20 }}>
-            {dnaStep > 0 && (
-              <button onClick={() => setDnaStep(s => s - 1)}
-                style={{ flex:1, padding:12, background:"#f3f4f6", border:"none", borderRadius:12, fontSize:14, fontWeight:500, cursor:"pointer", color:"#374151" }}>
-                ← Назад
-              </button>
-            )}
-            <button
-              onClick={() => isLast ? generateDna() : setDnaStep(s => s + 1)}
-              disabled={!canNext || dnaLoading}
-              style={{ flex:2, padding:12, background: canNext ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#e5e7eb", border:"none", borderRadius:12, fontSize:14, fontWeight:600, cursor: canNext ? "pointer" : "default", color: canNext ? "#fff" : "#9ca3af" }}>
-              {dnaLoading ? "Создаём ДНК голоса… 🧬" : isLast ? "✨ Создать ДНК голоса" : "Далее →"}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   const goToPay = async () => {
@@ -561,37 +601,6 @@ export default function App() {
     platBtn: (a) => ({ padding:"7px 16px", borderRadius:20, fontSize:13, cursor:"pointer", fontWeight:500, border: a ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: a ? "#ede9fe" : "#f9fafb", color: a ? "#6d28d9" : "#374151" }),
   };
 
-  const Onboarding = () => (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-      <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:420, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
-        <div style={{ textAlign:"center", marginBottom:24 }}>
-          <div style={{ fontSize:48, marginBottom:8 }}>🎉</div>
-          <div style={{ fontSize:22, fontWeight:700, color:"#1a1a2e", marginBottom:8 }}>Добро пожаловать!</div>
-          <div style={{ fontSize:14, color:"#6b7280", lineHeight:1.6 }}>Ты получила 4 бесплатные генерации. Вот как начать:</div>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:24 }}>
-          {[
-            { n:1, title:"Выбери формат", desc:"Пост, карусель, reels, прогрев — выбери что нужно прямо сейчас" },
-            { n:2, title:"Опиши тему", desc:"Напиши о чём текст — чем конкретнее, тем лучше результат" },
-            { n:3, title:"Получи текст", desc:"Нажми кнопку — AI напишет текст с душой и пониманием аудитории" },
-          ].map(item => (
-            <div key={item.n} style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-              <div style={{ width:32, height:32, borderRadius:"50%", background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:14, flexShrink:0 }}>{item.n}</div>
-              <div>
-                <div style={{ fontWeight:600, fontSize:14, color:"#1a1a2e" }}>{item.title}</div>
-                <div style={{ fontSize:13, color:"#6b7280", marginTop:2 }}>{item.desc}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <button style={{ width:"100%", padding:13, background:"linear-gradient(135deg,#7c3aed,#a855f7)", color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer" }}
-          onClick={() => setShowOnboarding(false)}>
-          Понятно, начнём! 🚀
-        </button>
-      </div>
-    </div>
-  );
-
   if (screen === "login") return (
     <div style={s.wrap}><div style={s.card}>
       <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -716,8 +725,18 @@ export default function App() {
 
   if (screen === "main") return (
     <>
-      {showOnboarding && <Onboarding />}
-      {showDna && <DnaModal />}
+      {showOnboarding && <Onboarding onClose={() => setShowOnboarding(false)} />}
+      {showDna && (
+        <DnaModal
+          dnaAnswers={dnaAnswers}
+          setDnaAnswers={setDnaAnswers}
+          dnaStep={dnaStep}
+          setDnaStep={setDnaStep}
+          dnaLoading={dnaLoading}
+          generateDna={generateDna}
+          onClose={() => { setShowDna(false); setDnaStep(0); }}
+        />
+      )}
       <div style={s.wrap}><div style={s.card}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
           <div style={s.badge}>✦ AI Pulse PRO</div>
@@ -872,7 +891,8 @@ export default function App() {
               ✓ ДНК голоса создан
             </div>
           )}
-          <textarea style={{ ...s.ta, minHeight:52 }} placeholder="Вставь 2-3 примера своих текстов — AI подстроится… или используй кнопку ДНК голоса 🧬"
+          <textarea style={{ ...s.ta, minHeight:52 }}
+            placeholder="Вставь 2-3 примера своих текстов — AI подстроится… или используй кнопку ДНК голоса 🧬"
             value={brandVoice} onChange={e => setBrandVoice(e.target.value)} />
         </div>
         <div style={{ marginTop:10 }}>
