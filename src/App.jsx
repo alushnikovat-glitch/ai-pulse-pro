@@ -883,7 +883,7 @@ export default function App() {
             <label style={{ ...s.lbl, marginBottom:0 }}>Голос бренда (необязательно)</label>
             <button onClick={() => setShowDna(true)}
               style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", border:"none", borderRadius:10, padding:"5px 12px", fontSize:12, fontWeight:600, color:"#fff", cursor:"pointer" }}
-              {"🧬 ДНК голоса"}
+              ДНК голоса
             </button>
           </div>
           {brandVoice && (
