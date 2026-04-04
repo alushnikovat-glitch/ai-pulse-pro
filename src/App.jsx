@@ -62,12 +62,8 @@ const GENDERS = [
 const GENDER_TYPES = ["post", "promo", "sales", "threads", "reels", "bio", "strategy", "niche", "plan", "carousel"];
 
 function genderInstruction(genderId) {
-  if (genderId === "female") {
-    return "\n\nПОЛ АВТОРА: Текст пишется от лица женщины. Используй женский род в глаголах и причастиях (решила, поняла, начала, была). Стиль — тёплый, чувственный, с личными деталями. Местоимения: я/мне/меня — женские формы.";
-  }
-  if (genderId === "male") {
-    return "\n\nПОЛ АВТОРА: Текст пишется от лица мужчины. Используй мужской род (решил, понял, начал, был). Стиль — уверенный, прямой, конкретный. Местоимения: я/мне/меня — мужские формы.";
-  }
+  if (genderId === "female") return "\n\nПОЛ АВТОРА: Текст пишется от лица женщины. Используй женский род в глаголах и причастиях (решила, поняла, начала, была). Стиль — тёплый, чувственный, с личными деталями.";
+  if (genderId === "male") return "\n\nПОЛ АВТОРА: Текст пишется от лица мужчины. Используй мужской род (решил, понял, начал, был). Стиль — уверенный, прямой, конкретный.";
   return "";
 }
 
@@ -108,12 +104,12 @@ function buildPrompt(typeId, style, genderId, language = "ru") {
     genderInstruction(genderId);
 
   const map = {
-    post: "\nТЫ ПИШЕШЬ: пост для соцсетей\nInstagram — строго до 2 200 символов. Telegram — до 4 096 символов. VK — до 4 096 символов.\nСТРУКТУРА: хук → история/боль → инсайт → совет → мягкий вопрос\nЭМОДЗИ: можно 2-3 штуки максимум — только в начале абзацев или в конце для акцента. Не в каждой строке.\n",
+    post: "\nТЫ ПИШЕШЬ: пост для соцсетей\nInstagram — строго до 2 200 символов. Telegram — до 4 096 символов. VK — до 4 096 символов.\nСТРУКТУРА: хук → история/боль → инсайт → совет → мягкий вопрос\nЭМОДЗИ: можно 2-3 штуки максимум — только в начале абзацев или в конце для акцента.\n",
     carousel: "\nТЫ — топ копирайтер вирусных каруселей Instagram.\nШАГ 1: предложи 10 идей (заголовок до 40 символов, суть, триггер, механика).\nШАГ 2: карусель 8-10 слайдов. Слайд 1: хук. Слайды 2-7: инсайты. Предпоследний: разворот. Последний: CTA со словом ПУЛЬС.\nКаждый слайд: заголовок до 40 символов + 1-3 предложения до 160 символов.\nЭМОДЗИ: 1 эмодзи на слайд максимум — только в заголовке.\n",
-    threads: "\nТЫ ПИШЕШЬ: пост живого момента для Threads/Instagram\n1. Эмоция без фильтра — восторг, удивление, можно капслок\n2. Конкретика с цифрами прямо в тексте\n3. Один инсайт почему это работает\n4. Мягкий вопрос в конце\nДо 500 символов. Короткие строки. Много воздуха.\nЭМОДЗИ: 1-2 штуки максимум — в начале или конце, не в середине.\n",
+    threads: "\nТЫ ПИШЕШЬ: пост живого момента для Threads/Instagram\n1. Эмоция без фильтра — восторг, удивление, можно капслок\n2. Конкретика с цифрами прямо в тексте\n3. Один инсайт почему это работает\n4. Мягкий вопрос в конце\nДо 500 символов. Короткие строки. Много воздуха.\nЭМОДЗИ: 1-2 штуки максимум.\n",
     reels: "\nТЫ ПИШЕШЬ: сценарий Reels\n0-3 сек: хук под целевую аудиторию\n3-10 сек: боль\n10-25 сек: решение в 3 шага\n25-30 сек: CTA\nПиши как сценарий: что говорить, что показывать, текст на экране\nБЕЗ ЭМОДЗИ — это технический сценарий.\n",
-    promo: "\nСЕРИЯ ПРОГРЕВА 6 ДНЕЙ. Каждый день = отдельная сторис до 100 слов, заканчивается вопросом.\nД1: кто ты через историю. Д2: боль изнутри. Д3: личный провал. Д4: ценности. Д5: результат/кейс. Д6: мягкое закрытие.\nЭМОДЗИ: 1-2 на каждый день — только в начале или конце сторис.\n",
-    sales: "\nПРОДАЮЩИЙ ТЕКСТ — сплошным живым текстом без заголовков.\nПортрет → боль своими словами → что получит → как работает → когда результат → следующий шаг.\nРусская логика: боль → доверие → действие.\nБЕЗ ЭМОДЗИ — серьёзный продающий текст.\n",
+    promo: "\nСЕРИЯ ПРОГРЕВА 6 ДНЕЙ. Каждый день = отдельная сторис до 100 слов, заканчивается вопросом.\nД1: кто ты через историю. Д2: боль изнутри. Д3: личный провал. Д4: ценности. Д5: результат/кейс. Д6: мягкое закрытие.\nЭМОДЗИ: 1-2 на каждый день.\n",
+    sales: "\nПРОДАЮЩИЙ ТЕКСТ — сплошным живым текстом без заголовков.\nПортрет → боль своими словами → что получит → как работает → когда результат → следующий шаг.\nБЕЗ ЭМОДЗИ — серьёзный продающий текст.\n",
     plan: "\nКОНТЕНТ-ПЛАН 30 дней: день / формат / тема / суть.\n40% польза, 30% личное, 20% продажи, 10% вовлечение.\nФорматы: пост, Reels, сторис, карусель. Учти цель месяца.\nБЕЗ ЭМОДЗИ — это структурный документ.\n",
     niche: "\nАНАЛИЗ НИШИ:\nПортрет аудитории. Топ-10 вирусных тем. Боли явные и глубокие. Топ-5 форматов. Позиционирование. Главные ошибки экспертов.\nБЕЗ ЭМОДЗИ — это экспертный разбор.\n",
     bio: "\nШАПКА ПРОФИЛЯ. 3 варианта.\nInstagram: строго до 150 символов. Telegram: до 255 символов.\nВ каждом: кто + что даёшь + CTA. Только конкретика.\nЭМОДЗИ: 1-2 штуки максимум если уместно.\n",
@@ -191,6 +187,18 @@ export default function App() {
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [copiedIdx, setCopiedIdx] = useState(null);
 
+  // ДНК голоса
+  const [showDna, setShowDna] = useState(false);
+  const [dnaStep, setDnaStep] = useState(0);
+  const [dnaLoading, setDnaLoading] = useState(false);
+  const [dnaAnswers, setDnaAnswers] = useState({
+    address: "ты",
+    style: "тёплый и близкий",
+    audience: "",
+    words: "",
+    examples: "",
+  });
+
   const isThreads = type?.id === "threads";
   const isCarousel = type?.id === "carousel";
   const isPost = type?.id === "post";
@@ -206,6 +214,135 @@ export default function App() {
       body: JSON.stringify(body)
     });
     return r.json();
+  };
+
+  const generateDna = async () => {
+    setDnaLoading(true);
+    try {
+      const prompt = `Создай описание голоса бренда для использования в AI-инструменте генерации контента. Используй только предоставленные данные.
+
+Данные:
+- Обращение к аудитории: ${dnaAnswers.address}
+- Стиль подачи: ${dnaAnswers.style}
+- Аудитория: ${dnaAnswers.audience}
+- Ключевые слова контента: ${dnaAnswers.words}
+- Примеры текстов: ${dnaAnswers.examples}
+
+Напиши описание голоса бренда в 4-6 предложениях. Описание должно передавать характер, тон, стиль и особенности языка автора так чтобы AI мог воспроизвести этот голос. Без заголовков и списков — только живой описательный текст. Пиши на русском языке.`;
+
+      const r = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 500,
+          system: "Ты эксперт по голосу бренда и копирайтингу. Создаёшь точные описания авторского стиля для AI-инструментов.",
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await r.json();
+      const text = clean(data.content?.map(b => b.text || "").join("") || "");
+      if (text) {
+        setBrandVoice(text);
+        setShowDna(false);
+        setDnaStep(0);
+      }
+    } catch (e) {}
+    setDnaLoading(false);
+  };
+
+  const DnaModal = () => {
+    const steps = [
+      {
+        title: "Как обращаешься к аудитории?",
+        content: (
+          <div style={{ display:"flex", gap:8 }}>
+            {["ты", "вы"].map(opt => (
+              <button key={opt} onClick={() => setDnaAnswers(a => ({...a, address: opt}))}
+                style={{ flex:1, padding:"12px", borderRadius:12, fontSize:15, fontWeight:600, cursor:"pointer", border: dnaAnswers.address === opt ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: dnaAnswers.address === opt ? "#ede9fe" : "#f9fafb", color: dnaAnswers.address === opt ? "#6d28d9" : "#374151" }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        )
+      },
+      {
+        title: "Твой стиль подачи?",
+        content: (
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {["тёплый и близкий", "уверенный и экспертный", "дерзкий и провокационный", "спокойный и вдумчивый"].map(opt => (
+              <button key={opt} onClick={() => setDnaAnswers(a => ({...a, style: opt}))}
+                style={{ padding:"11px 16px", borderRadius:12, fontSize:14, fontWeight:500, cursor:"pointer", textAlign:"left", border: dnaAnswers.style === opt ? "2px solid #7c3aed" : "2px solid #e5e7eb", background: dnaAnswers.style === opt ? "#ede9fe" : "#f9fafb", color: dnaAnswers.style === opt ? "#6d28d9" : "#374151" }}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        )
+      },
+      {
+        title: "Кто твоя аудитория?",
+        content: (
+          <textarea style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box", resize:"vertical", minHeight:80, fontFamily:"inherit" }}
+            placeholder="Например: женщины 25-40 лет, эксперты, предприниматели…"
+            value={dnaAnswers.audience}
+            onChange={e => setDnaAnswers(a => ({...a, audience: e.target.value}))} />
+        )
+      },
+      {
+        title: "3 слова которые описывают твой контент",
+        content: (
+          <input style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box" }}
+            placeholder="Например: честность, живость, глубина"
+            value={dnaAnswers.words}
+            onChange={e => setDnaAnswers(a => ({...a, words: e.target.value}))} />
+        )
+      },
+      {
+        title: "Вставь 1-2 примера своих текстов",
+        content: (
+          <textarea style={{ width:"100%", padding:"11px 14px", border:"1.5px solid #e5e7eb", borderRadius:10, fontSize:14, outline:"none", boxSizing:"border-box", resize:"vertical", minHeight:120, fontFamily:"inherit" }}
+            placeholder="Вставь сюда реальные посты или сообщения которые ты написала…"
+            value={dnaAnswers.examples}
+            onChange={e => setDnaAnswers(a => ({...a, examples: e.target.value}))} />
+        )
+      },
+    ];
+
+    const current = steps[dnaStep];
+    const isLast = dnaStep === steps.length - 1;
+    const canNext = dnaStep === 0 ? true : dnaStep === 1 ? true : dnaStep === 2 ? dnaAnswers.audience.trim() : dnaStep === 3 ? dnaAnswers.words.trim() : dnaAnswers.examples.trim();
+
+    return (
+      <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.5)", zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+        <div style={{ background:"#fff", borderRadius:20, padding:28, maxWidth:440, width:"100%", boxShadow:"0 8px 40px rgba(124,58,237,.2)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+            <div style={{ fontSize:13, color:"#9ca3af" }}>Шаг {dnaStep + 1} из {steps.length}</div>
+            <button onClick={() => { setShowDna(false); setDnaStep(0); }} style={{ background:"none", border:"none", fontSize:20, cursor:"pointer", color:"#9ca3af" }}>×</button>
+          </div>
+          <div style={{ display:"flex", gap:4, marginBottom:24 }}>
+            {steps.map((_, i) => (
+              <div key={i} style={{ flex:1, height:3, borderRadius:2, background: i <= dnaStep ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#e5e7eb" }} />
+            ))}
+          </div>
+          <div style={{ fontSize:48, textAlign:"center", marginBottom:12 }}>🧬</div>
+          <div style={{ fontSize:17, fontWeight:700, color:"#1a1a2e", marginBottom:16, textAlign:"center" }}>{current.title}</div>
+          {current.content}
+          <div style={{ display:"flex", gap:8, marginTop:20 }}>
+            {dnaStep > 0 && (
+              <button onClick={() => setDnaStep(s => s - 1)}
+                style={{ flex:1, padding:12, background:"#f3f4f6", border:"none", borderRadius:12, fontSize:14, fontWeight:500, cursor:"pointer", color:"#374151" }}>
+                ← Назад
+              </button>
+            )}
+            <button
+              onClick={() => isLast ? generateDna() : setDnaStep(s => s + 1)}
+              disabled={!canNext || dnaLoading}
+              style={{ flex:2, padding:12, background: canNext ? "linear-gradient(135deg,#7c3aed,#a855f7)" : "#e5e7eb", border:"none", borderRadius:12, fontSize:14, fontWeight:600, cursor: canNext ? "pointer" : "default", color: canNext ? "#fff" : "#9ca3af" }}>
+              {dnaLoading ? "Создаём ДНК голоса… 🧬" : isLast ? "✨ Создать ДНК голоса" : "Далее →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const goToPay = async () => {
@@ -379,12 +516,7 @@ export default function App() {
       await fetch("/api/history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "feedback", emoji,
-          type: type?.label, topic,
-          text: result,
-          userId: userId || "guest"
-        })
+        body: JSON.stringify({ action: "feedback", emoji, type: type?.label, topic, text: result, userId: userId || "guest" })
       });
     } catch (e) {}
   };
@@ -585,6 +717,7 @@ export default function App() {
   if (screen === "main") return (
     <>
       {showOnboarding && <Onboarding />}
+      {showDna && <DnaModal />}
       <div style={s.wrap}><div style={s.card}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
           <div style={s.badge}>✦ AI Pulse PRO</div>
@@ -593,6 +726,10 @@ export default function App() {
             {userId && (
               <button style={{ background:"#f3f4f6", border:"none", borderRadius:10, padding:"6px 12px", fontSize:12, fontWeight:600, color:"#374151", cursor:"pointer" }}
                 onClick={() => { loadHistory(); setScreen("history"); }}>📂</button>
+            )}
+            {accessType === "guest" && (
+              <button style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", border:"none", borderRadius:10, padding:"7px 16px", fontSize:13, fontWeight:700, color:"#fff", cursor:"pointer" }}
+                onClick={() => setScreen("login")}>🔑 Войти</button>
             )}
           </div>
         </div>
@@ -723,8 +860,20 @@ export default function App() {
         )}
 
         <div style={{ marginTop:14 }}>
-          <label style={s.lbl}>Голос бренда (необязательно)</label>
-          <textarea style={{ ...s.ta, minHeight:52 }} placeholder="Вставь 2-3 примера своих текстов — AI подстроится…" value={brandVoice} onChange={e => setBrandVoice(e.target.value)} />
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+            <label style={{ ...s.lbl, marginBottom:0 }}>Голос бренда (необязательно)</label>
+            <button onClick={() => setShowDna(true)}
+              style={{ background:"linear-gradient(135deg,#7c3aed,#a855f7)", border:"none", borderRadius:20, padding:"5px 12px", fontSize:12, fontWeight:600, color:"#fff", cursor:"pointer" }}>
+              🧬 ДНК голоса
+            </button>
+          </div>
+          {brandVoice && (
+            <div style={{ background:"#f5f0ff", border:"1.5px solid #e9d5ff", borderRadius:10, padding:"8px 12px", fontSize:12, color:"#6d28d9", marginBottom:6, lineHeight:1.5 }}>
+              ✓ ДНК голоса создан
+            </div>
+          )}
+          <textarea style={{ ...s.ta, minHeight:52 }} placeholder="Вставь 2-3 примера своих текстов — AI подстроится… или используй кнопку ДНК голоса 🧬"
+            value={brandVoice} onChange={e => setBrandVoice(e.target.value)} />
         </div>
         <div style={{ marginTop:10 }}>
           <label style={s.lbl}>Контекст (необязательно)</label>
